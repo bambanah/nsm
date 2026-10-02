@@ -42,12 +42,12 @@ A website that plans a Norwegian Singles Method (NSM) running week from a weekly
   - The Long Run is placed only on a Long-preferred or Default day (never on an Easy-preferred day). Keep the existing order: Long preference, else Sunday, else Saturday, else a random eligible day.
   - Easy-day merge rule merges Default easy days before Easy-preferred days.
   - Day Preference validation treats Sunday and Monday as adjacent (the week wraps).
-  - Validation error, not silent behaviour, when there are more SubT preferences than the session count at that Weekly Duration (2 sessions at 240-258 min, 3 above), and when there are not enough Default days to place all Sub-threshold Sessions on non-adjacent days. Replace the misleading "1.5% error rate" exhaustion message with a clear one about placement.
+  - Validation error, not silent behaviour, when there are more SubT preferences than the session count at that Weekly Duration (2 sessions at 240-258 min, 3 above), when there are not enough Default days to place all Sub-threshold Sessions on non-adjacent days, and when no Default or Long-preferred day is left for the Long Run. Replace the misleading "1.5% error rate" exhaustion message with a clear one about placement.
   - Enforce warm-up and cool-down within 5-20.
   - Kept from threshold.works: merged Rest Days may exceed the max of 2 (the max limits preferences only); missing Sub-threshold days are filled from Default days. Drop the "2-3 SubT days" hint text.
   - Dropped entirely: distance mode, pace/power benchmark, target pace display, imperial units, CSV export, post-generation interval swapping and duration editing, custom (Bakken / 90s) sessions.
 - Intensity is shown as Rep Length pace labels only: 15K, HM, 30K. No concrete paces.
-- Shuffle lifecycle: before first save the preview uses a random Shuffle generated in the browser; Save persists it. A Reshuffle button sets a new random Shuffle and saves only the Shuffle immediately (unsaved form edits stay unsaved). Shuffle changes affect every Week.
+- Shuffle lifecycle: before first save the preview uses a random Shuffle generated in the browser; Save persists it. A Reshuffle button sets a new random Shuffle and saves only the Shuffle immediately (unsaved form edits stay unsaved); before the first save there is nothing to save, so Reshuffle only changes the preview's Shuffle. Shuffle changes affect every Week.
 
 ### UI
 
@@ -65,21 +65,21 @@ A website that plans a Norwegian Singles Method (NSM) running week from a weekly
 
 ## Steps
 
-- [ ] `git init`; scaffold a TanStack Start React app in the project root with pnpm (follow the current TanStack Start getting-started docs); add Nitro v3 as a Vite plugin; confirm `pnpm build` produces `.output/server/index.mjs` and `node .output/server/index.mjs` serves the app.
-- [ ] Add oxlint, oxfmt, Vitest; scripts `lint`, `format`, `test`, `build`, `start`, `db:generate`, `db:migrate`.
-- [ ] Add Tailwind CSS v4 and initialise shadcn/ui.
-- [ ] Implement the Week generator test-first (use the `/tdd` skill) as a pure module, e.g. `src/planner/`: seeded PRNG keyed on Shuffle + Monday date, rep tables, Sub-threshold Session selection, Day Preference validation, day placement, Long Run, Easy Runs, merge rule, totals, all with the deviations listed in Decisions. Tests assert rules across many Shuffles and dates rather than exact threshold.works outputs: session count by Weekly Duration, per-session work caps (25 min up to 300 min, 35 up to 420, none above), no adjacent Sub-threshold days including Sunday-Monday, Long Run 25% clamped 75-135 and never on an Easy-preferred day, merge behaviour and order, each validation error, determinism for the same Shuffle and date, variation across dates. Use the worked examples in the research doc as structural sanity checks.
-- [ ] Postgres + Drizzle: connection from `DATABASE_URL`; `plan_settings` table (user id primary key referencing the Better Auth user, weekly duration minutes, warm-up, cool-down, day preferences jsonb, shuffle integer, updated at); `migrate.js` using drizzle-orm's migrator; local Postgres for dev (e.g. a docker run command documented in the README).
-- [ ] Better Auth with email/password and the Drizzle adapter; generate its schema and migrate; auth route, session server function, protected main route; sign-in and sign-out UI.
-- [ ] Server functions: load the current user's Plan Settings (or none), save Plan Settings (validated with the same validation as the planner), reshuffle.
-- [ ] Main page: Plan Settings form with live preview, Save, Reshuffle, current/next Week view, summary, as described in Decisions/UI. Planner runs in the browser for preview from the same module.
-- [ ] Multi-stage Dockerfile (Node 24, pnpm, build, copy `.output` and migrations, `CMD` runs `node migrate.js && node .output/server/index.mjs`, port 3000); short README covering env vars, local dev, and Coolify deployment (Dockerfile build pack, Postgres resource, env vars, domain).
+- [x] `git init`; scaffold a TanStack Start React app in the project root with pnpm (follow the current TanStack Start getting-started docs); add Nitro v3 as a Vite plugin; confirm `pnpm build` produces `.output/server/index.mjs` and `node .output/server/index.mjs` serves the app.
+- [x] Add oxlint, oxfmt, Vitest; scripts `lint`, `format`, `test`, `build`, `start`, `db:generate`, `db:migrate`.
+- [x] Add Tailwind CSS v4 and initialise shadcn/ui.
+- [x] Implement the Week generator test-first (use the `/tdd` skill) as a pure module, e.g. `src/planner/`: seeded PRNG keyed on Shuffle + Monday date, rep tables, Sub-threshold Session selection, Day Preference validation, day placement, Long Run, Easy Runs, merge rule, totals, all with the deviations listed in Decisions. Tests assert rules across many Shuffles and dates rather than exact threshold.works outputs: session count by Weekly Duration, per-session work caps (25 min up to 300 min, 35 up to 420, none above), no adjacent Sub-threshold days including Sunday-Monday, Long Run 25% clamped 75-135 and never on an Easy-preferred day, merge behaviour and order, each validation error, determinism for the same Shuffle and date, variation across dates. Use the worked examples in the research doc as structural sanity checks.
+- [x] Postgres + Drizzle: connection from `DATABASE_URL`; `plan_settings` table (user id primary key referencing the Better Auth user, weekly duration minutes, warm-up, cool-down, day preferences jsonb, shuffle integer, updated at); `migrate.js` using drizzle-orm's migrator; local Postgres for dev (e.g. a docker run command documented in the README).
+- [x] Better Auth with email/password and the Drizzle adapter; generate its schema and migrate; auth route, session server function, protected main route; sign-in and sign-out UI.
+- [x] Server functions: load the current user's Plan Settings (or none), save Plan Settings (validated with the same validation as the planner), reshuffle.
+- [x] Main page: Plan Settings form with live preview, Save, Reshuffle, current/next Week view, summary, as described in Decisions/UI. Planner runs in the browser for preview from the same module.
+- [x] Multi-stage Dockerfile (Node 24, pnpm, build, copy `.output` and migrations, `CMD` runs `node migrate.js && node .output/server/index.mjs`, port 3000); short README covering env vars, local dev, and Coolify deployment (Dockerfile build pack, Postgres resource, env vars, domain).
 - [ ] Deploy to Coolify and sign in on the public URL.
 
 ## Verification
 
 - `pnpm lint`, `pnpm test`, `pnpm build` all pass.
-- Locally with Postgres running: `pnpm db:migrate`, `pnpm dev`, sign up with email and password, enter 6h 0m with all Default: the current Week shows 3 Sub-threshold Sessions on Tue/Thu/Sat, a 90 min Long Run on Sunday, equal Easy Runs on Mon/Wed/Fri, sub-threshold % near 23. Next Week shows different Rep Formats with the same structure. Reload: same Weeks. Reshuffle: Weeks change and persist across reload.
+- Locally with Postgres running: `pnpm db:migrate`, `pnpm dev`, sign up with email and password, enter 6h 0m with all Default: the current Week shows 3 Sub-threshold Sessions on Tue/Thu/Sat, a 90 min Long Run on Sunday, equal Easy Runs on Mon/Wed/Fri, sub-threshold % near 23. Next Week has the same structure and usually different Rep Formats (only the 30K session is random; the other two follow from it, so about one Week in five repeats the set on different days). Reload: same Weeks. Reshuffle: Weeks change and persist across reload.
 - 4h 0m all Default: 2 Sub-threshold Sessions on Tue/Thu, 75 min Long Run Sunday, two Easy Runs and two merged Rest Days.
 - Sunday Easy preference at 10h: Long Run lands on a Default day (Mon, Wed or Fri, since Sub-threshold Sessions take Tue/Thu/Sat), never Sunday. SubT on Sunday and Monday: inline adjacency error. Three SubT preferences at 4h: error naming 2 sessions. Warm-up 25: error.
 - Unsaved edits update the preview but are lost on reload; Save persists them.
