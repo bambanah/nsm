@@ -1,6 +1,6 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
-@import 'shadcn/tailwind.css';
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -30,48 +30,50 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* Catppuccin Latte */
+  --background: #fafafa; /* off-white, not in Latte */
+  --foreground: #4c4f69; /* text */
+  --card: #eff1f5; /* base */
+  --card-foreground: #4c4f69; /* text */
+  --popover: #eff1f5; /* base */
+  --popover-foreground: #4c4f69; /* text */
+  --primary: #8839ef; /* mauve */
+  --primary-foreground: #eff1f5; /* base */
+  --secondary: #ccd0da; /* surface0 */
+  --secondary-foreground: #4c4f69; /* text */
+  --muted: #ccd0da; /* surface0 */
+  --muted-foreground: #6c6f85; /* subtext0 */
+  --accent: #ccd0da; /* surface0 */
+  --accent-foreground: #4c4f69; /* text */
+  --destructive: #d20f39; /* red */
+  --border: #bcc0cc; /* surface1 */
+  --input: #acb0be; /* surface2 */
+  --ring: #7287fd; /* lavender */
   --radius: 0.625rem;
   color-scheme: light;
 }
 
 .dark {
   color-scheme: dark;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  /* Catppuccin Mocha */
+  --background: #1e1e2e; /* base */
+  --foreground: #cdd6f4; /* text */
+  --card: #313244; /* surface0 */
+  --card-foreground: #cdd6f4; /* text */
+  --popover: #313244; /* surface0 */
+  --popover-foreground: #cdd6f4; /* text */
+  --primary: #cba6f7; /* mauve */
+  --primary-foreground: #11111b; /* crust */
+  --secondary: #45475a; /* surface1 */
+  --secondary-foreground: #cdd6f4; /* text */
+  --muted: #45475a; /* surface1 */
+  --muted-foreground: #a6adc8; /* subtext0 */
+  --accent: #45475a; /* surface1 */
+  --accent-foreground: #cdd6f4; /* text */
+  --destructive: #f38ba8; /* red */
+  --border: #45475a; /* surface1 */
+  --input: #585b70; /* surface2 */
+  --ring: #b4befe; /* lavender */
 }
 
 @layer base {
@@ -112,9 +114,9 @@
   transition-timing-function: ease-out;
 }
 
-html[data-theme='system'] [data-theme-icon='system'],
-html[data-theme='light'] [data-theme-icon='light'],
-html[data-theme='dark'] [data-theme-icon='dark'] {
+html[data-theme="system"] [data-theme-icon="system"],
+html[data-theme="light"] [data-theme-icon="light"],
+html[data-theme="dark"] [data-theme-icon="dark"] {
   opacity: 1;
   scale: 1;
   rotate: 0deg;
