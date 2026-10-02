@@ -2,6 +2,14 @@ import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 
 import appCss from '../styles.css?url'
 
+const themeScript = `{
+  let t
+  try { t = localStorage.getItem('theme') } catch {}
+  if (t !== 'light' && t !== 'dark') t = 'system'
+  document.documentElement.dataset.theme = t
+  document.documentElement.classList.toggle('dark', t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches))
+}`
+
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -16,8 +24,9 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <HeadContent />
       </head>
       <body>

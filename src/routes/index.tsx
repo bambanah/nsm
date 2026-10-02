@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
+import { ThemeMenu } from '@/components/theme-menu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -136,6 +137,7 @@ function Home() {
         <h1 className="text-2xl font-semibold">NSM Planner</h1>
         <div className="flex items-center gap-3 text-sm">
           <span className="text-muted-foreground">{user.name}</span>
+          <ThemeMenu />
           <Button variant="outline" size="sm" onClick={signOut}>
             Sign out
           </Button>
