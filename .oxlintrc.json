@@ -1,4 +1,4 @@
 {
   "plugins": ["typescript", "react", "unicorn", "oxc", "import"],
-  "ignorePatterns": ["src/routeTree.gen.ts", "src/components/ui"]
+  "ignorePatterns": ["src/routeTree.gen.ts", "src/components/ui", "src/db/auth-schema.ts"]
 }

@@ -27,7 +27,7 @@ A website that plans a Norwegian Singles Method (NSM) running week from a weekly
 - Data access through TanStack Start server functions (`createServerFn` with a validator); DB code in `*.server.ts` files, server-function wrappers in `*.functions.ts`, shared code in plain `*.ts`. No separate JSON API.
 - UI: Tailwind CSS v4 + shadcn/ui.
 - Postgres (Coolify) + Drizzle ORM + drizzle-kit migrations (plain SQL files committed). Rejected: SQLite (owner prefers Coolify Postgres), Kysely, raw SQL.
-- Auth: Better Auth with the GitHub provider only, open signup (anyone with GitHub can sign up). No email/password (needs SMTP, verification, reset flows; a config flag later if wanted). No intervals.icu OAuth. Better Auth TanStack Start integration: catch-all server route `src/routes/api/auth/$.ts` forwarding GET/POST to `auth.handler(request)`, `tanstackStartCookies()` as the last plugin, route protection via `beforeLoad` + a server function reading the session. Docs: https://www.better-auth.com/docs/integrations/tanstack. Generate Better Auth's Drizzle schema with `npx auth@latest generate --adapter drizzle --dialect postgresql` (older name `@better-auth/cli`), then drizzle-kit generate/migrate.
+- Auth: Better Auth with the GitHub provider and email/password, both with open signup. Email/password is sign up and sign in only: no email verification and no password reset, so no SMTP (a forgotten password is reset in the database). No intervals.icu OAuth. Better Auth TanStack Start integration: catch-all server route `src/routes/api/auth/$.ts` forwarding GET/POST to `auth.handler(request)`, `tanstackStartCookies()` as the last plugin, route protection via `beforeLoad` + a server function reading the session. Docs: https://www.better-auth.com/docs/integrations/tanstack. Generate Better Auth's Drizzle schema with `npx auth@latest generate --adapter drizzle --dialect postgresql` (older name `@better-auth/cli`), then drizzle-kit generate/migrate.
 - Tooling: Vitest (heavy on the Week generator), oxlint, oxfmt.
 - Deploy: multi-stage Dockerfile (not Nixpacks). Container start command runs migrations then the server: `node migrate.js && node .output/server/index.mjs`, so a failed migration never serves traffic. In dev run migrations by hand (`pnpm db:migrate`).
 - Secrets as Coolify environment variables: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`.
@@ -51,7 +51,7 @@ A website that plans a Norwegian Singles Method (NSM) running week from a weekly
 
 ### UI
 
-- Sign-in page (GitHub) and one main page.
+- Sign-in page (email/password sign in or sign up, and GitHub) and one main page.
 - Plan Settings form: hours + minutes, warm-up, cool-down, seven Day Preference selects. New users start with empty Weekly Duration, 10/10, all Default. Live Week preview as the form changes once inputs are valid; explicit Save persists; validation messages shown inline.
 - Week view: current Week and next Week only (toggle or tabs), "current" from the browser's local date. Each day card: weekday, type label (Sub-threshold, Easy, Long, Rest). Sub-threshold card: warm-up minutes, `${reps}×${minutes}min @${15K|HM|30K} (${work}min total)`, "1min rest in between", cool-down minutes, and the session's total minutes (work + reps - 1 + warm-up + cool-down; threshold.works omits this, we add it). Easy and Long cards: minutes. Rest card: "Rest day".
 - Summary: total weekly minutes (sum of non-rest days, may differ slightly from input due to rounding), sub-threshold work minutes, sub-threshold % = work / total to one decimal.
@@ -60,7 +60,7 @@ A website that plans a Norwegian Singles Method (NSM) running week from a weekly
 
 - Sync to intervals.icu, scheduled jobs, failure notifications (deferred, see Open questions).
 - Storing Weeks, multi-week progression, per-Week edits (ADR 0001).
-- Signup allowlist, email/password, intervals.icu login.
+- Signup allowlist, email verification, password reset, intervals.icu login.
 - Cross-training or non-running sports.
 
 ## Steps
