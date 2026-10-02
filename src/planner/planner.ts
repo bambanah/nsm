@@ -1,5 +1,5 @@
 import { createRandom, type Random } from './random'
-import { REP_FORMATS, type RepFormat } from './rep-formats'
+import { REP_FORMATS, workMinutes, type RepFormat } from './rep-formats'
 
 export const WEEKDAYS = [
   'monday',
@@ -13,7 +13,9 @@ export const WEEKDAYS = [
 
 export type Weekday = (typeof WEEKDAYS)[number]
 
-export type DayPreference = 'default' | 'rest' | 'easy' | 'long' | 'subT'
+export const DAY_PREFERENCES = ['default', 'rest', 'easy', 'long', 'subT'] as const
+
+export type DayPreference = (typeof DAY_PREFERENCES)[number]
 
 export interface PlanSettings {
   weeklyDurationMinutes: number
@@ -53,13 +55,12 @@ export function deriveWeek(settings: PlanSettings, monday: string): Week {
   const random = createRandom(`${settings.shuffle}:${monday}`)
   const minutes = settings.weeklyDurationMinutes
   const preference = (d: Weekday) => settings.dayPreferences[d] ?? 'default'
-  const daysPreferring = (p: DayPreference) => WEEKDAYS.filter((d) => preference(d) === p)
-  const preferredSubT = daysPreferring('subT')
-  const defaults = daysPreferring('default')
+  const preferredSubT = daysPreferring(settings, 'subT')
+  const defaults = daysPreferring(settings, 'default')
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const repFormats = selectRepFormats(minutes, random)
-    const work = sum(repFormats.map((f) => f.reps * f.repMinutes))
+    const work = sum(repFormats.map(workMinutes))
     const share = (work / minutes) * 100
     if (Math.abs(share - SUB_THRESHOLD_PERCENT) > TOLERANCE && attempt < MAX_ATTEMPTS) continue
 
@@ -88,7 +89,7 @@ export function deriveWeek(settings: PlanSettings, monday: string): Week {
 
     const easyDays = [
       ...random.shuffle(defaults.filter((d) => !subTDays.includes(d) && d !== longDay)),
-      ...daysPreferring('easy'),
+      ...daysPreferring(settings, 'easy'),
     ]
     const subTTotal = sum(sessions.map((s) => s.minutes))
     const easyMinutes = Math.round((minutes - subTTotal - longMinutes) / easyDays.length)
@@ -112,7 +113,6 @@ export function deriveWeek(settings: PlanSettings, monday: string): Week {
 
 const SHORT_EASY_RUN_MINUTES = 25
 
-// Each pass merges the shortest short Easy Run into the next shortest, in order.
 function mergeShortEasyRuns(runs: { weekday: Weekday; minutes: number }[]) {
   let remaining = runs
   for (;;) {
@@ -128,13 +128,13 @@ function mergeShortEasyRuns(runs: { weekday: Weekday; minutes: number }[]) {
 }
 
 function toSession(repFormat: RepFormat, settings: PlanSettings): SubThresholdSession {
-  const workMinutes = repFormat.reps * repFormat.repMinutes
+  const work = workMinutes(repFormat)
   return {
     repFormat,
     warmUpMinutes: settings.warmUpMinutes,
     coolDownMinutes: settings.coolDownMinutes,
-    workMinutes,
-    minutes: workMinutes + repFormat.reps - 1 + settings.warmUpMinutes + settings.coolDownMinutes,
+    workMinutes: work,
+    minutes: work + repFormat.reps - 1 + settings.warmUpMinutes + settings.coolDownMinutes,
   }
 }
 
@@ -154,37 +154,37 @@ function summarise(monday: string, days: Day[]): Week {
   }
 }
 
+const subThresholdBudget = (weeklyDurationMinutes: number) =>
+  Math.round((weeklyDurationMinutes * SUB_THRESHOLD_PERCENT) / 100)
+
 export function sessionCount(weeklyDurationMinutes: number) {
-  return Math.round((weeklyDurationMinutes * SUB_THRESHOLD_PERCENT) / 100) < 60 ? 2 : 3
+  return subThresholdBudget(weeklyDurationMinutes) < 60 ? 2 : 3
 }
 
 function selectRepFormats(minutes: number, random: Random): RepFormat[] {
-  const budget = Math.round((minutes * SUB_THRESHOLD_PERCENT) / 100)
   const hours = minutes / 60
   const cap = hours <= 5 ? 25 : hours <= 7 ? 35 : Infinity
   const capped = (repLength: RepFormat['repLength']) =>
-    REP_FORMATS.filter((f) => f.repLength === repLength && f.reps * f.repMinutes <= cap)
-  const short = capped('15K')
-  const medium = capped('HM')
+    REP_FORMATS.filter((f) => f.repLength === repLength && workMinutes(f) <= cap)
+  const fifteenK = capped('15K')
+  const halfMarathon = capped('HM')
 
-  const long = random.pick(capped('30K'))
-  const remainder = Math.max(0, budget - long.reps * long.repMinutes)
+  const thirtyK = random.pick(capped('30K'))
+  const remainder = Math.max(0, subThresholdBudget(minutes) - workMinutes(thirtyK))
   const closest = (target: number, candidates: RepFormat[]) =>
     target > 0
       ? candidates.reduce((best, f) =>
-          Math.abs(f.reps * f.repMinutes - target) < Math.abs(best.reps * best.repMinutes - target)
-            ? f
-            : best,
+          Math.abs(workMinutes(f) - target) < Math.abs(workMinutes(best) - target) ? f : best,
         )
       : random.pick(candidates)
 
   const selected =
     sessionCount(minutes) === 2
-      ? [long, closest(remainder, [...short, ...medium])]
+      ? [thirtyK, closest(remainder, [...fifteenK, ...halfMarathon])]
       : [
-          long,
-          closest(Math.round(remainder * 0.5), short),
-          closest(Math.round(remainder * 0.5), medium),
+          thirtyK,
+          closest(Math.round(remainder * 0.5), fifteenK),
+          closest(Math.round(remainder * 0.5), halfMarathon),
         ]
   return random.shuffle(selected)
 }
@@ -236,6 +236,10 @@ function maxSpacing(candidates: Weekday[], count: number): Weekday[] {
     if (!unique.includes(index)) unique.push(index)
   }
   return unique.sort((a, b) => a - b).map((i) => WEEKDAYS[i])
+}
+
+export function daysPreferring(settings: PlanSettings, preference: DayPreference) {
+  return WEEKDAYS.filter((d) => (settings.dayPreferences[d] ?? 'default') === preference)
 }
 
 export function isWellSpaced(days: Weekday[]) {

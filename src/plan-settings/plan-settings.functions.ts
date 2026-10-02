@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireUserId } from '@/auth/auth.server'
-import { randomShuffle, WEEKDAYS } from '@/planner/planner'
+import { DAY_PREFERENCES, randomShuffle, WEEKDAYS } from '@/planner/planner'
 import { validatePlanSettings } from '@/planner/validate'
 import { findPlanSettings, updateShuffle, upsertPlanSettings } from './plan-settings.server'
 
@@ -9,7 +9,7 @@ const planSettingsSchema = z.object({
   weeklyDurationMinutes: z.number(),
   warmUpMinutes: z.number(),
   coolDownMinutes: z.number(),
-  dayPreferences: z.partialRecord(z.enum(WEEKDAYS), z.enum(['rest', 'easy', 'long', 'subT'])),
+  dayPreferences: z.partialRecord(z.enum(WEEKDAYS), z.enum(DAY_PREFERENCES).exclude(['default'])),
   shuffle: z
     .int()
     .min(0)

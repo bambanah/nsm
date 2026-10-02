@@ -6,6 +6,8 @@ export interface RepFormat {
   repMinutes: number
 }
 
+export const workMinutes = (f: RepFormat) => f.reps * f.repMinutes
+
 const formats = (repLength: RepLength, pairs: [number, number][]) =>
   pairs.map(([reps, repMinutes]): RepFormat => ({ repLength, reps, repMinutes }))
 

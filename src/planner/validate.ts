@@ -1,9 +1,8 @@
 import {
   combinations,
+  daysPreferring,
   isWellSpaced,
   sessionCount,
-  WEEKDAYS,
-  type DayPreference,
   type PlanSettings,
 } from './planner'
 
@@ -12,22 +11,22 @@ export interface PlanSettingsError {
   message: string
 }
 
-const between = (value: number, min: number, max: number) =>
+const isIntegerBetween = (value: number, min: number, max: number) =>
   Number.isInteger(value) && value >= min && value <= max
 
 export function validatePlanSettings(settings: PlanSettings): PlanSettingsError[] {
   const errors: PlanSettingsError[] = []
-  if (!between(settings.weeklyDurationMinutes, 240, 600))
+  if (!isIntegerBetween(settings.weeklyDurationMinutes, 240, 600))
     errors.push({
       field: 'weeklyDuration',
       message: 'Weekly Duration must be between 4h 0m and 10h 0m',
     })
-  if (!between(settings.warmUpMinutes, 5, 20))
+  if (!isIntegerBetween(settings.warmUpMinutes, 5, 20))
     errors.push({
       field: 'warmUp',
       message: 'Warm-up must be between 5 and 20 minutes',
     })
-  if (!between(settings.coolDownMinutes, 5, 20))
+  if (!isIntegerBetween(settings.coolDownMinutes, 5, 20))
     errors.push({
       field: 'coolDown',
       message: 'Cool-down must be between 5 and 20 minutes',
@@ -41,16 +40,14 @@ export function validatePlanSettings(settings: PlanSettings): PlanSettingsError[
 }
 
 function dayPreferenceErrors(settings: PlanSettings, sessions: number | undefined): string[] {
-  const daysPreferring = (p: DayPreference) =>
-    WEEKDAYS.filter((d) => (settings.dayPreferences[d] ?? 'default') === p)
-  const subT = daysPreferring('subT')
+  const subT = daysPreferring(settings, 'subT')
   const errors: string[] = []
   for (const [preference, max, noun] of [
     ['rest', 2, 'rest days'],
     ['easy', 2, 'easy days'],
     ['long', 1, 'long day'],
   ] as const) {
-    const count = daysPreferring(preference).length
+    const count = daysPreferring(settings, preference).length
     if (count > max) errors.push(`Maximum ${max} ${noun} allowed (you have ${count})`)
   }
   if (sessions === undefined && subT.length > 3)
@@ -65,13 +62,13 @@ function dayPreferenceErrors(settings: PlanSettings, sessions: number | undefine
     )
   if (errors.length > 0 || sessions === undefined) return errors
 
-  const defaults = daysPreferring('default')
+  const defaults = daysPreferring(settings, 'default')
   const need = sessions - subT.length
   if (!combinations(defaults, need).some((days) => isWellSpaced([...days, ...subT])))
     return [
       `Not enough Default days to place ${sessions} Sub-threshold Sessions on non-adjacent days`,
     ]
-  if (daysPreferring('long').length === 0 && defaults.length === need)
+  if (daysPreferring(settings, 'long').length === 0 && defaults.length === need)
     return ['No Default or Long day left for the Long Run']
   return []
 }

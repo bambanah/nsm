@@ -58,11 +58,20 @@ const toForm = (s: PlanSettings): FormState => ({
   shuffle: s.shuffle,
 })
 
+const parseMinutes = (value: string) => (value === '' ? Number.NaN : Number(value))
+
+const samePlanSettings = (a: PlanSettings, b: PlanSettings) =>
+  a.weeklyDurationMinutes === b.weeklyDurationMinutes &&
+  a.warmUpMinutes === b.warmUpMinutes &&
+  a.coolDownMinutes === b.coolDownMinutes &&
+  a.shuffle === b.shuffle &&
+  WEEKDAYS.every((d) => a.dayPreferences[d] === b.dayPreferences[d])
+
 const toSettings = (f: FormState): PlanSettings => ({
   weeklyDurationMinutes:
     f.hours === '' && f.minutes === '' ? Number.NaN : Number(f.hours) * 60 + Number(f.minutes),
-  warmUpMinutes: f.warmUp === '' ? Number.NaN : Number(f.warmUp),
-  coolDownMinutes: f.coolDown === '' ? Number.NaN : Number(f.coolDown),
+  warmUpMinutes: parseMinutes(f.warmUp),
+  coolDownMinutes: parseMinutes(f.coolDown),
   dayPreferences: f.dayPreferences,
   shuffle: f.shuffle,
 })
@@ -92,28 +101,29 @@ function Home() {
           shuffle: randomShuffle(),
         },
   )
-  const [saveError, setSaveError] = useState<string>()
+  const [actionError, setActionError] = useState<string>()
 
   const settings = toSettings(form)
   const errors = validatePlanSettings(settings)
-  const isDirty = JSON.stringify(settings) !== JSON.stringify(saved)
+  const isDirty = !saved || !samePlanSettings(settings, saved)
   const update = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }))
 
-  const save = async () => {
-    setSaveError(undefined)
+  const run = async (action: () => Promise<void>) => {
+    setActionError(undefined)
     try {
-      await savePlanSettings({ data: settings })
+      await action()
       await router.invalidate()
     } catch (e) {
-      setSaveError((e as Error).message)
+      setActionError((e as Error).message)
     }
   }
 
-  const onReshuffle = async () => {
-    if (!saved) return update({ shuffle: randomShuffle() })
-    update({ shuffle: await reshuffle() })
-    await router.invalidate()
-  }
+  const save = () => run(() => savePlanSettings({ data: settings }))
+
+  const onReshuffle = () =>
+    saved
+      ? run(async () => update({ shuffle: await reshuffle() }))
+      : update({ shuffle: randomShuffle() })
 
   const signOut = async () => {
     await authClient.signOut()
@@ -208,7 +218,7 @@ function Home() {
           {isDirty && saved && (
             <span className="text-muted-foreground text-sm">Unsaved changes</span>
           )}
-          {saveError && <span className="text-destructive text-sm">{saveError}</span>}
+          {actionError && <span className="text-destructive text-sm">{actionError}</span>}
         </div>
       </section>
 
