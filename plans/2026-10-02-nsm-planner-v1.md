@@ -27,10 +27,10 @@ A website that plans a Norwegian Singles Method (NSM) running week from a weekly
 - Data access through TanStack Start server functions (`createServerFn` with a validator); DB code in `*.server.ts` files, server-function wrappers in `*.functions.ts`, shared code in plain `*.ts`. No separate JSON API.
 - UI: Tailwind CSS v4 + shadcn/ui.
 - Postgres (Coolify) + Drizzle ORM + drizzle-kit migrations (plain SQL files committed). Rejected: SQLite (owner prefers Coolify Postgres), Kysely, raw SQL.
-- Auth: Better Auth with the GitHub provider and email/password, both with open signup. Email/password is sign up and sign in only: no email verification and no password reset, so no SMTP (a forgotten password is reset in the database). No intervals.icu OAuth. Better Auth TanStack Start integration: catch-all server route `src/routes/api/auth/$.ts` forwarding GET/POST to `auth.handler(request)`, `tanstackStartCookies()` as the last plugin, route protection via `beforeLoad` + a server function reading the session. Docs: https://www.better-auth.com/docs/integrations/tanstack. Generate Better Auth's Drizzle schema with `npx auth@latest generate --adapter drizzle --dialect postgresql` (older name `@better-auth/cli`), then drizzle-kit generate/migrate.
+- Auth: Better Auth with email/password only, open signup. Sign up and sign in only: no email verification and no password reset, so no SMTP (a forgotten password is reset in the database). No GitHub or other social providers for now, no intervals.icu OAuth. Better Auth TanStack Start integration: catch-all server route `src/routes/api/auth/$.ts` forwarding GET/POST to `auth.handler(request)`, `tanstackStartCookies()` as the last plugin, route protection via `beforeLoad` + a server function reading the session. Docs: https://www.better-auth.com/docs/integrations/tanstack. Generate Better Auth's Drizzle schema with `npx auth@latest generate --adapter drizzle --dialect postgresql` (older name `@better-auth/cli`), then drizzle-kit generate/migrate.
 - Tooling: Vitest (heavy on the Week generator), oxlint, oxfmt.
 - Deploy: multi-stage Dockerfile (not Nixpacks). Container start command runs migrations then the server: `node migrate.js && node .output/server/index.mjs`, so a failed migration never serves traffic. In dev run migrations by hand (`pnpm db:migrate`).
-- Secrets as Coolify environment variables: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`.
+- Secrets as Coolify environment variables: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`.
 
 ### Domain model and planner
 
@@ -51,7 +51,7 @@ A website that plans a Norwegian Singles Method (NSM) running week from a weekly
 
 ### UI
 
-- Sign-in page (email/password sign in or sign up, and GitHub) and one main page.
+- Sign-in page (email/password sign in or sign up) and one main page.
 - Plan Settings form: hours + minutes, warm-up, cool-down, seven Day Preference selects. New users start with empty Weekly Duration, 10/10, all Default. Live Week preview as the form changes once inputs are valid; explicit Save persists; validation messages shown inline.
 - Week view: current Week and next Week only (toggle or tabs), "current" from the browser's local date. Each day card: weekday, type label (Sub-threshold, Easy, Long, Rest). Sub-threshold card: warm-up minutes, `${reps}×${minutes}min @${15K|HM|30K} (${work}min total)`, "1min rest in between", cool-down minutes, and the session's total minutes (work + reps - 1 + warm-up + cool-down; threshold.works omits this, we add it). Easy and Long cards: minutes. Rest card: "Rest day".
 - Summary: total weekly minutes (sum of non-rest days, may differ slightly from input due to rounding), sub-threshold work minutes, sub-threshold % = work / total to one decimal.
@@ -60,7 +60,7 @@ A website that plans a Norwegian Singles Method (NSM) running week from a weekly
 
 - Sync to intervals.icu, scheduled jobs, failure notifications (deferred, see Open questions).
 - Storing Weeks, multi-week progression, per-Week edits (ADR 0001).
-- Signup allowlist, email verification, password reset, intervals.icu login.
+- Signup allowlist, email verification, password reset, GitHub or other social sign-in, intervals.icu login.
 - Cross-training or non-running sports.
 
 ## Steps
@@ -70,20 +70,20 @@ A website that plans a Norwegian Singles Method (NSM) running week from a weekly
 - [ ] Add Tailwind CSS v4 and initialise shadcn/ui.
 - [ ] Implement the Week generator test-first (use the `/tdd` skill) as a pure module, e.g. `src/planner/`: seeded PRNG keyed on Shuffle + Monday date, rep tables, Sub-threshold Session selection, Day Preference validation, day placement, Long Run, Easy Runs, merge rule, totals, all with the deviations listed in Decisions. Tests assert rules across many Shuffles and dates rather than exact threshold.works outputs: session count by Weekly Duration, per-session work caps (25 min up to 300 min, 35 up to 420, none above), no adjacent Sub-threshold days including Sunday-Monday, Long Run 25% clamped 75-135 and never on an Easy-preferred day, merge behaviour and order, each validation error, determinism for the same Shuffle and date, variation across dates. Use the worked examples in the research doc as structural sanity checks.
 - [ ] Postgres + Drizzle: connection from `DATABASE_URL`; `plan_settings` table (user id primary key referencing the Better Auth user, weekly duration minutes, warm-up, cool-down, day preferences jsonb, shuffle integer, updated at); `migrate.js` using drizzle-orm's migrator; local Postgres for dev (e.g. a docker run command documented in the README).
-- [ ] Better Auth with GitHub provider and Drizzle adapter; generate its schema and migrate; auth route, session server function, protected main route; sign-in and sign-out UI. Document creating a GitHub OAuth app (callback `${BETTER_AUTH_URL}/api/auth/callback/github`) for dev and production.
+- [ ] Better Auth with email/password and the Drizzle adapter; generate its schema and migrate; auth route, session server function, protected main route; sign-in and sign-out UI.
 - [ ] Server functions: load the current user's Plan Settings (or none), save Plan Settings (validated with the same validation as the planner), reshuffle.
 - [ ] Main page: Plan Settings form with live preview, Save, Reshuffle, current/next Week view, summary, as described in Decisions/UI. Planner runs in the browser for preview from the same module.
-- [ ] Multi-stage Dockerfile (Node 24, pnpm, build, copy `.output` and migrations, `CMD` runs `node migrate.js && node .output/server/index.mjs`, port 3000); short README covering env vars, local dev, GitHub OAuth app, and Coolify deployment (Dockerfile build pack, Postgres resource, env vars, domain).
+- [ ] Multi-stage Dockerfile (Node 24, pnpm, build, copy `.output` and migrations, `CMD` runs `node migrate.js && node .output/server/index.mjs`, port 3000); short README covering env vars, local dev, and Coolify deployment (Dockerfile build pack, Postgres resource, env vars, domain).
 - [ ] Deploy to Coolify and sign in on the public URL.
 
 ## Verification
 
 - `pnpm lint`, `pnpm test`, `pnpm build` all pass.
-- Locally with Postgres running: `pnpm db:migrate`, `pnpm dev`, sign in with GitHub, enter 6h 0m with all Default: the current Week shows 3 Sub-threshold Sessions on Tue/Thu/Sat, a 90 min Long Run on Sunday, equal Easy Runs on Mon/Wed/Fri, sub-threshold % near 23. Next Week shows different Rep Formats with the same structure. Reload: same Weeks. Reshuffle: Weeks change and persist across reload.
+- Locally with Postgres running: `pnpm db:migrate`, `pnpm dev`, sign up with email and password, enter 6h 0m with all Default: the current Week shows 3 Sub-threshold Sessions on Tue/Thu/Sat, a 90 min Long Run on Sunday, equal Easy Runs on Mon/Wed/Fri, sub-threshold % near 23. Next Week shows different Rep Formats with the same structure. Reload: same Weeks. Reshuffle: Weeks change and persist across reload.
 - 4h 0m all Default: 2 Sub-threshold Sessions on Tue/Thu, 75 min Long Run Sunday, two Easy Runs and two merged Rest Days.
 - Sunday Easy preference at 10h: Long Run lands on a Default day (Mon, Wed or Fri, since Sub-threshold Sessions take Tue/Thu/Sat), never Sunday. SubT on Sunday and Monday: inline adjacency error. Three SubT preferences at 4h: error naming 2 sessions. Warm-up 25: error.
 - Unsaved edits update the preview but are lost on reload; Save persists them.
-- `docker build` succeeds and the container starts against a fresh database (migrations run first); deployed Coolify URL works with GitHub sign-in.
+- `docker build` succeeds and the container starts against a fresh database (migrations run first); deployed Coolify URL works with email sign-in.
 
 ## Open questions
 

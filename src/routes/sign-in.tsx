@@ -68,17 +68,6 @@ function SignIn() {
           {isSignUp ? 'Have an account? Sign in' : 'No account? Sign up'}
         </Button>
       </form>
-      <div className="text-muted-foreground flex items-center gap-3 text-sm">
-        <span className="bg-border h-px flex-1" />
-        or
-        <span className="bg-border h-px flex-1" />
-      </div>
-      <Button
-        variant="outline"
-        onClick={() => authClient.signIn.social({ provider: 'github', callbackURL: '/' })}
-      >
-        Sign in with GitHub
-      </Button>
     </main>
   )
 }
