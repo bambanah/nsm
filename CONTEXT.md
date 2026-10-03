@@ -5,7 +5,7 @@ Plans a Norwegian Singles Method running week from a weekly time budget, startin
 ## Planning
 
 **Plan Settings**:
-The persisted inputs from which every Week is derived: Weekly Duration, warm-up and cool-down length, a Day Preference per weekday, a Shuffle, and an optional 5K Time. The only planning state the app stores.
+The persisted inputs from which every Week is derived: Weekly Duration, warm-up and cool-down length, a Day Preference per weekday, a Shuffle, and an optional 5K Time. With Session Choices, the only planning state the app stores.
 _Avoid_: Template, config, profile
 
 **Weekly Duration**:
@@ -21,7 +21,7 @@ The value in the Plan Settings that, with a Week's Monday date, fixes every choi
 _Avoid_: Seed, randomise
 
 **Week**:
-A Monday-to-Sunday set of runs derived from the Plan Settings and its Monday date, so consecutive Weeks differ. Never stored or hand-edited in the app.
+A Monday-to-Sunday set of runs derived from the Plan Settings and its Monday date, so consecutive Weeks differ, with that Week's Session Choices applied. Never stored itself.
 _Avoid_: Plan, schedule
 
 ## Runs
@@ -29,6 +29,10 @@ _Avoid_: Plan, schedule
 **Sub-threshold Session**:
 One of the three interval days in a Week: warm-up, a Rep Format at its Rep Length's pace with a Recovery between reps, cool-down.
 _Avoid_: SubT workout, quality session, workout
+
+**Session Choice**:
+The Rep Format the runner picked for a weekday's Sub-threshold Session in a specific Week, in place of the planner's pick. Deleted once that day is no longer a Sub-threshold Session or the Rep Format exceeds the per-session cap.
+_Avoid_: Override, edit, custom session
 
 **Rep Format**:
 A Sub-threshold Session's reps and rep minutes, e.g. 4×7.
