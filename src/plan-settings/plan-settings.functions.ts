@@ -1,9 +1,9 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireUserId } from '@/auth/auth.server'
-import { DAY_PREFERENCES, randomShuffle, WEEKDAYS } from '@/planner/planner'
+import { DAY_PREFERENCES, WEEKDAYS } from '@/planner/planner'
 import { validatePlanSettings } from '@/planner/validate'
-import { findPlanSettings, updateShuffle, upsertPlanSettings } from './plan-settings.server'
+import { findPlanSettings, upsertPlanSettings } from './plan-settings.server'
 
 const planSettingsSchema = z.object({
   weeklyDurationMinutes: z.number(),
@@ -28,9 +28,3 @@ export const savePlanSettings = createServerFn({ method: 'POST' })
     if (errors.length > 0) throw new Error(errors.map((e) => e.message).join(', '))
     await upsertPlanSettings(userId, data)
   })
-
-export const reshuffle = createServerFn({ method: 'POST' }).handler(async () => {
-  const shuffle = randomShuffle()
-  await updateShuffle(await requireUserId(), shuffle)
-  return shuffle
-})

@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { ChevronDownIcon } from 'lucide-react'
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
 import { ThemeMenu } from '@/components/theme-menu'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -16,11 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { WeekView } from '@/components/week-view'
 import { authClient } from '@/auth/auth-client'
 import { getUser } from '@/auth/auth.functions'
-import {
-  getPlanSettings,
-  reshuffle,
-  savePlanSettings,
-} from '@/plan-settings/plan-settings.functions'
+import { getPlanSettings, savePlanSettings } from '@/plan-settings/plan-settings.functions'
 import { mondayOf } from '@/lib/week-dates'
 import {
   deriveWeek,
@@ -104,28 +101,26 @@ function Home() {
         },
   )
   const [actionError, setActionError] = useState<string>()
+  const [expanded, setExpanded] = useState(!saved)
 
   const settings = toSettings(form)
   const errors = validatePlanSettings(settings)
-  const isDirty = !saved || !samePlanSettings(settings, saved)
   const update = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }))
 
-  const run = async (action: () => Promise<void>) => {
-    setActionError(undefined)
-    try {
-      await action()
-      await router.invalidate()
-    } catch (e) {
-      setActionError((e as Error).message)
-    }
-  }
-
-  const save = () => run(() => savePlanSettings({ data: settings }))
-
-  const onReshuffle = () =>
-    saved
-      ? run(async () => update({ shuffle: await reshuffle() }))
-      : update({ shuffle: randomShuffle() })
+  useEffect(() => {
+    const next = toSettings(form)
+    if (validatePlanSettings(next).length > 0 || (saved && samePlanSettings(next, saved))) return
+    const timeout = setTimeout(async () => {
+      setActionError(undefined)
+      try {
+        await savePlanSettings({ data: next })
+        await router.invalidate()
+      } catch (e) {
+        setActionError((e as Error).message)
+      }
+    }, 600)
+    return () => clearTimeout(timeout)
+  }, [form, saved, router])
 
   const signOut = async () => {
     await authClient.signOut()
@@ -147,87 +142,114 @@ function Home() {
         </div>
       </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl font-extrabold">Plan Settings</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-6">
-          <div className="flex flex-wrap gap-5">
-            <Field label="Weekly Duration" errors={errors} field="weeklyDuration">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <NumberInput
-                  value={form.hours}
-                  max={10}
-                  onChange={(hours) =>
-                    update({
-                      hours,
-                      minutes: hours !== '' && form.minutes === '' ? '0' : form.minutes,
-                    })
-                  }
-                />
-                <span>h</span>
-                <NumberInput
-                  value={form.minutes}
-                  max={59}
-                  onChange={(minutes) => update({ minutes })}
-                />
-                <span>m</span>
-              </div>
-            </Field>
-            <Field label="Warm-up (min)" errors={errors} field="warmUp">
-              <NumberInput value={form.warmUp} max={99} onChange={(warmUp) => update({ warmUp })} />
-            </Field>
-            <Field label="Cool-down (min)" errors={errors} field="coolDown">
-              <NumberInput
-                value={form.coolDown}
-                max={99}
-                onChange={(coolDown) => update({ coolDown })}
-              />
-            </Field>
-          </div>
-
-          <Field label="Day Preferences" errors={errors} field="dayPreferences">
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-7">
-              {WEEKDAYS.map((weekday) => (
-                <div key={weekday} className="flex flex-col gap-1">
-                  <Label className="text-sm text-muted-foreground capitalize">
-                    {weekday.slice(0, 3)}
-                  </Label>
-                  <Select
-                    value={form.dayPreferences[weekday] ?? 'default'}
-                    onValueChange={(value: DayPreference) => {
-                      const { [weekday]: _, ...rest } = form.dayPreferences
-                      update({
-                        dayPreferences: value === 'default' ? rest : { ...rest, [weekday]: value },
-                      })
-                    }}
-                  >
-                    <SelectTrigger className="w-full font-semibold">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(PREFERENCE_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+      <Card size="sm">
+        <CardContent className="flex flex-col gap-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-lg font-semibold">
+              {form.hours || 0}h {form.minutes || 0}m · {form.warmUp}′ warm-up · {form.coolDown}′
+              cool-down
+              {WEEKDAYS.filter((d) => form.dayPreferences[d]).map((d) => (
+                <span key={d} className="text-muted-foreground capitalize">
+                  {' '}
+                  · {d.slice(0, 3)} {PREFERENCE_LABELS[form.dayPreferences[d]!]}
+                </span>
               ))}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" onClick={() => update({ shuffle: randomShuffle() })}>
+                Reshuffle
+              </Button>
+              <Button
+                variant="outline"
+                aria-expanded={expanded}
+                onClick={() => setExpanded(!expanded)}
+              >
+                Edit
+                <ChevronDownIcon className={expanded ? 'rotate-180' : undefined} />
+              </Button>
             </div>
-          </Field>
-
-          <div className="flex items-center gap-3">
-            <Button onClick={save} disabled={errors.length > 0 || !isDirty}>
-              Save
-            </Button>
-            <Button variant="secondary" onClick={onReshuffle}>
-              Reshuffle
-            </Button>
-            {isDirty && saved && <span className="text-muted-foreground">Unsaved changes</span>}
-            {actionError && <span className="text-destructive">{actionError}</span>}
           </div>
+          {expanded && (
+            <>
+              <div className="flex flex-wrap gap-5">
+                <Field label="Weekly Duration" errors={errors} field="weeklyDuration">
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    <NumberInput
+                      value={form.hours}
+                      max={10}
+                      onChange={(hours) =>
+                        update({
+                          hours,
+                          minutes: hours !== '' && form.minutes === '' ? '0' : form.minutes,
+                        })
+                      }
+                    />
+                    <span>h</span>
+                    <NumberInput
+                      value={form.minutes}
+                      max={59}
+                      onChange={(minutes) => update({ minutes })}
+                    />
+                    <span>m</span>
+                  </div>
+                </Field>
+                <Field label="Warm-up (min)" errors={errors} field="warmUp">
+                  <NumberInput
+                    value={form.warmUp}
+                    max={99}
+                    onChange={(warmUp) => update({ warmUp })}
+                  />
+                </Field>
+                <Field label="Cool-down (min)" errors={errors} field="coolDown">
+                  <NumberInput
+                    value={form.coolDown}
+                    max={99}
+                    onChange={(coolDown) => update({ coolDown })}
+                  />
+                </Field>
+              </div>
+              <Field label="Day Preferences" errors={errors} field="dayPreferences">
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-7">
+                  {WEEKDAYS.map((weekday) => (
+                    <div key={weekday} className="flex flex-col gap-1">
+                      <Label className="text-sm text-muted-foreground capitalize">
+                        {weekday.slice(0, 3)}
+                      </Label>
+                      <Select
+                        value={form.dayPreferences[weekday] ?? 'default'}
+                        onValueChange={(value: DayPreference) => {
+                          const { [weekday]: _, ...rest } = form.dayPreferences
+                          update({
+                            dayPreferences:
+                              value === 'default' ? rest : { ...rest, [weekday]: value },
+                          })
+                        }}
+                      >
+                        <SelectTrigger className="w-full font-semibold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(PREFERENCE_LABELS).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+              </Field>
+            </>
+          )}
+          {[
+            ...(expanded ? [] : errors.map((e) => e.message)),
+            ...(actionError ? [actionError] : []),
+          ].map((message) => (
+            <p key={message} className="-mt-3 text-destructive">
+              {message}
+            </p>
+          ))}
         </CardContent>
       </Card>
 

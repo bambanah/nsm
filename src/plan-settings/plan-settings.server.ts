@@ -24,12 +24,3 @@ export async function upsertPlanSettings(userId: string, settings: PlanSettings)
     .values({ userId, ...values })
     .onConflictDoUpdate({ target: planSettings.userId, set: values })
 }
-
-export async function updateShuffle(userId: string, shuffle: number) {
-  const updated = await db
-    .update(planSettings)
-    .set({ shuffle, updatedAt: new Date() })
-    .where(eq(planSettings.userId, userId))
-    .returning({ shuffle: planSettings.shuffle })
-  if (updated.length === 0) throw new Error('Save Plan Settings before reshuffling')
-}
