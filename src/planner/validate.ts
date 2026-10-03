@@ -13,6 +13,13 @@ export interface PlanSettingsError {
   message: string
 }
 
+export const DAY_PREFERENCE_LIMITS = {
+  rest: 2,
+  easy: 2,
+  long: 1,
+  subT: SUB_THRESHOLD_SESSIONS,
+} as const
+
 const hoursAndMinutes = (minutes: number) => `${Math.floor(minutes / 60)}h ${minutes % 60}m`
 
 const isIntegerBetween = (value: number, min: number, max: number) =>
@@ -49,16 +56,17 @@ export function validatePlanSettings(settings: PlanSettings): PlanSettingsError[
 function dayPreferenceErrors(settings: PlanSettings): string[] {
   const subT = daysPreferring(settings, 'subT')
   const errors: string[] = []
-  for (const [preference, max, noun] of [
-    ['rest', 2, 'rest days'],
-    ['easy', 2, 'easy days'],
-    ['long', 1, 'long day'],
+  for (const [preference, noun] of [
+    ['rest', 'rest days'],
+    ['easy', 'easy days'],
+    ['long', 'long day'],
   ] as const) {
+    const max = DAY_PREFERENCE_LIMITS[preference]
     const count = daysPreferring(settings, preference).length
     if (count > max) errors.push(`Maximum ${max} ${noun} allowed (you have ${count})`)
   }
-  if (subT.length > SUB_THRESHOLD_SESSIONS)
-    errors.push(`Maximum ${SUB_THRESHOLD_SESSIONS} SubT days allowed (you have ${subT.length})`)
+  if (subT.length > DAY_PREFERENCE_LIMITS.subT)
+    errors.push(`Maximum ${DAY_PREFERENCE_LIMITS.subT} SubT days allowed (you have ${subT.length})`)
   if (!isWellSpaced(subT))
     errors.push(
       'Preferred SubT days cannot be on adjacent days (Sunday and Monday count as adjacent)',

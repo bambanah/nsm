@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronDownIcon } from 'lucide-react'
-import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect, useNavigate, useRouter } from '@tanstack/react-router'
+import { Explained } from '@/components/explained'
 import { ThemeMenu } from '@/components/theme-menu'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -26,7 +27,11 @@ import {
   type DayPreference,
   type PlanSettings,
 } from '@/planner/planner'
-import { validatePlanSettings, type PlanSettingsError } from '@/planner/validate'
+import {
+  DAY_PREFERENCE_LIMITS,
+  validatePlanSettings,
+  type PlanSettingsError,
+} from '@/planner/validate'
 
 export const Route = createFileRoute('/')({
   ssr: 'data-only',
@@ -134,6 +139,9 @@ function Home() {
           NSM Planner <span className="text-primary">•</span>
         </h1>
         <div className="flex items-center gap-3">
+          <Link to="/how-it-works" className="font-semibold text-primary hover:underline">
+            How this works
+          </Link>
           <span className="hidden text-muted-foreground sm:inline">{user.name}</span>
           <ThemeMenu />
           <Button variant="outline" size="sm" onClick={signOut}>
@@ -176,7 +184,7 @@ function Home() {
                   <div className="flex items-center gap-2 text-lg font-semibold">
                     <NumberInput
                       value={form.hours}
-                      max={10}
+                      max={9}
                       onChange={(hours) =>
                         update({
                           hours,
@@ -208,7 +216,18 @@ function Home() {
                   />
                 </Field>
               </div>
-              <Field label="Day Preferences" errors={errors} field="dayPreferences">
+              <Field
+                label={
+                  <Explained
+                    section="day-preferences"
+                    explanation={`Default leaves the day to the planner. At most ${DAY_PREFERENCE_LIMITS.rest} Rest, ${DAY_PREFERENCE_LIMITS.easy} Easy, ${DAY_PREFERENCE_LIMITS.long} Long and ${DAY_PREFERENCE_LIMITS.subT} SubT days, and SubT days cannot be next to each other.`}
+                  >
+                    Day Preferences
+                  </Explained>
+                }
+                errors={errors}
+                field="dayPreferences"
+              >
                 <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-7">
                   {WEEKDAYS.map((weekday) => (
                     <div key={weekday} className="flex flex-col gap-1">
@@ -288,7 +307,7 @@ function Field({
   field,
   children,
 }: {
-  label: string
+  label: React.ReactNode
   errors: PlanSettingsError[]
   field: PlanSettingsError['field']
   children: React.ReactNode

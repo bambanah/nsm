@@ -1,11 +1,27 @@
+import { Explained } from '@/components/explained'
 import { Card, CardContent } from '@/components/ui/card'
-import type { Day, Week } from '@/planner/planner'
+import {
+  LONG_RUN_RATIO,
+  MAX_LONG_RUN_MINUTES,
+  MIN_LONG_RUN_MINUTES,
+  SHORT_EASY_RUN_MINUTES,
+  type Day,
+  type SubThresholdSession,
+  type Week,
+} from '@/planner/planner'
+import type { RepLength } from '@/planner/rep-formats'
 
 const TYPE_LABELS: Record<Day['type'], string> = {
   subT: 'Sub-threshold',
   easy: 'Easy',
   long: 'Long',
   rest: 'Rest',
+}
+
+const RACE_PACES: Record<RepLength, string> = {
+  '15K': '15K',
+  HM: 'half-marathon',
+  '30K': '30K',
 }
 
 const dayOfMonth = (monday: string, offset: number) => {
@@ -18,8 +34,30 @@ export function WeekView({ week }: { week: Week }) {
     <div className="flex flex-col gap-5">
       <dl className="grid grid-cols-3 gap-3">
         <Stat label="Total" value={week.totalMinutes} unit="min" />
-        <Stat label="Sub-threshold work" value={week.subThresholdWorkMinutes} unit="min" />
-        <Stat label="Sub-threshold share" value={week.subThresholdPercent.toFixed(1)} unit="%" />
+        <Stat
+          label={
+            <Explained
+              section="budget"
+              explanation="Rep minutes only. Warm-ups, cool-downs and Recoveries count as easy time."
+            >
+              Sub-threshold work
+            </Explained>
+          }
+          value={week.subThresholdWorkMinutes}
+          unit="min"
+        />
+        <Stat
+          label={
+            <Explained
+              section="budget"
+              explanation={`Sub-threshold work ÷ total running time. The target at this Weekly Duration is ${week.subThresholdTargetPercent}%.`}
+            >
+              Sub-threshold share
+            </Explained>
+          }
+          value={week.subThresholdPercent.toFixed(1)}
+          unit="%"
+        />
       </dl>
       <ol className="grid gap-2 lg:grid-cols-7">
         {week.days.map((day, i) => (
@@ -30,7 +68,15 @@ export function WeekView({ week }: { week: Week }) {
   )
 }
 
-function Stat({ label, value, unit }: { label: string; value: number | string; unit: string }) {
+function Stat({
+  label,
+  value,
+  unit,
+}: {
+  label: React.ReactNode
+  value: number | string
+  unit: string
+}) {
   return (
     <Card size="sm">
       <CardContent>
@@ -57,13 +103,32 @@ function DayCell({ day, date }: { day: Day; date: number }) {
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 lg:flex-none lg:gap-2">
         <span className="text-xs font-bold" style={{ color }}>
-          {TYPE_LABELS[day.type]}
+          {day.type === 'rest' && day.merged ? (
+            <Explained
+              section="easy-runs"
+              explanation={`Easy Runs this week would have been ${SHORT_EASY_RUN_MINUTES} min or less, so two were combined into one run and this day became a Rest Day.`}
+            >
+              {TYPE_LABELS.rest}
+            </Explained>
+          ) : (
+            TYPE_LABELS[day.type]
+          )}
         </span>
         {day.type === 'subT' && <SessionDetails session={day.session} />}
       </div>
       {day.type !== 'rest' && (
         <p className="text-2xl font-extrabold lg:mt-auto">
-          {day.type === 'subT' ? day.session.minutes : day.minutes}
+          {day.type === 'subT' ? (
+            <Explained section="sessions" explanation={sessionBreakdown(day.session)}>
+              {day.session.minutes}
+            </Explained>
+          ) : day.type === 'long' ? (
+            <Explained section="long-run" explanation={longRunBreakdown(day)}>
+              {day.minutes}
+            </Explained>
+          ) : (
+            day.minutes
+          )}
           <span className="ml-1 text-sm font-semibold text-muted-foreground">min</span>
         </p>
       )}
@@ -71,15 +136,36 @@ function DayCell({ day, date }: { day: Day; date: number }) {
   )
 }
 
-function SessionDetails({ session }: { session: Extract<Day, { type: 'subT' }>['session'] }) {
+function sessionBreakdown(session: SubThresholdSession) {
+  const { reps, repMinutes } = session.repFormat
+  return `${session.warmUpMinutes}′ warm-up + ${reps}×${repMinutes}′ reps + ${reps - 1}×${session.recoveryMinutes}′ Recovery + ${session.coolDownMinutes}′ cool-down = ${session.minutes} min.`
+}
+
+function longRunBreakdown(day: Extract<Day, { type: 'long' }>) {
+  const ratio = `${LONG_RUN_RATIO} × a ${Math.round(day.baseEasyRunMinutes)} min Easy Run`
+  if (day.minutes === day.ratioMinutes) return `About ${ratio}.`
+  return day.minutes === MIN_LONG_RUN_MINUTES
+    ? `${ratio} is ${day.ratioMinutes} min, so it is raised to the ${MIN_LONG_RUN_MINUTES} min minimum.`
+    : `${ratio} is ${day.ratioMinutes} min, so it is lowered to the ${MAX_LONG_RUN_MINUTES} min maximum.`
+}
+
+function SessionDetails({ session }: { session: SubThresholdSession }) {
   const { reps, repMinutes, repLength } = session.repFormat
-  const structure = `${session.warmUpMinutes}′ warm-up · 1′ rests · ${session.coolDownMinutes}′ cool-down`
   return (
-    <div className="flex flex-col" title={structure}>
+    <div className="flex flex-col">
       <p className="font-bold">
-        {reps}×{repMinutes}′ @{repLength}
+        {reps}×{repMinutes}′{' '}
+        <Explained
+          section="pacing"
+          explanation={`Run the reps at your current ${RACE_PACES[repLength]} race pace.`}
+        >
+          @{repLength}
+        </Explained>
       </p>
-      <p className="truncate text-sm text-muted-foreground lg:hidden">{structure}</p>
+      <p className="truncate text-sm text-muted-foreground lg:hidden">
+        {session.warmUpMinutes}′ warm-up · {session.recoveryMinutes}′ Recoveries ·{' '}
+        {session.coolDownMinutes}′ cool-down
+      </p>
     </div>
   )
 }
