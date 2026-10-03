@@ -9,7 +9,7 @@ import {
 } from './planner'
 
 export interface PlanSettingsError {
-  field: 'weeklyDuration' | 'warmUp' | 'coolDown' | 'dayPreferences'
+  field: 'weeklyDuration' | 'warmUp' | 'coolDown' | 'fiveKTime' | 'dayPreferences'
   message: string
 }
 
@@ -47,6 +47,12 @@ export function validatePlanSettings(settings: PlanSettings): PlanSettingsError[
     errors.push({
       field: 'coolDown',
       message: 'Cool-down must be between 5 and 20 minutes',
+    })
+  const { fiveKSeconds } = settings
+  if (fiveKSeconds !== null && !(Number.isInteger(fiveKSeconds) && fiveKSeconds > 0))
+    errors.push({
+      field: 'fiveKTime',
+      message: '5K Time must be minutes and seconds, e.g. 19:45',
     })
   for (const message of dayPreferenceErrors(settings))
     errors.push({ field: 'dayPreferences', message })

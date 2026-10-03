@@ -9,6 +9,7 @@ const settings = (overrides: Partial<PlanSettings> = {}): PlanSettings => ({
   coolDownMinutes: 10,
   dayPreferences: {},
   shuffle: 1,
+  fiveKSeconds: null,
   ...overrides,
 })
 

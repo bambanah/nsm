@@ -1,0 +1,1 @@
+ALTER TABLE "plan_settings" ADD COLUMN "five_k_seconds" integer;

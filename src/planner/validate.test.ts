@@ -8,6 +8,7 @@ const settings = (overrides: Partial<PlanSettings> = {}): PlanSettings => ({
   coolDownMinutes: 10,
   dayPreferences: {},
   shuffle: 1,
+  fiveKSeconds: null,
   ...overrides,
 })
 
@@ -34,6 +35,16 @@ describe('validatePlanSettings', () => {
       { field: 'coolDown', message: 'Cool-down must be between 5 and 20 minutes' },
     ])
   })
+  it.each([null, 1, 1185])('accepts a 5K Time of %s seconds', (fiveKSeconds) => {
+    expect(validatePlanSettings(settings({ fiveKSeconds }))).toEqual([])
+  })
+
+  it.each([0, -60, 1185.5, Number.NaN])('rejects a 5K Time of %s seconds', (fiveKSeconds) => {
+    expect(validatePlanSettings(settings({ fiveKSeconds }))).toEqual([
+      { field: 'fiveKTime', message: '5K Time must be minutes and seconds, e.g. 19:45' },
+    ])
+  })
+
   const preferenceErrors = (overrides: Partial<PlanSettings>) =>
     validatePlanSettings(settings(overrides)).map((e) => {
       expect(e.field).toBe('dayPreferences')

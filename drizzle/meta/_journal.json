@@ -8,6 +8,13 @@
       "when": 1790939972653,
       "tag": "0000_gifted_lady_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790995259537,
+      "tag": "0001_glossy_stone_men",
+      "breakpoints": true
     }
   ]
 }

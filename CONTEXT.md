@@ -5,7 +5,7 @@ Plans a Norwegian Singles Method running week from a weekly time budget, startin
 ## Planning
 
 **Plan Settings**:
-The persisted inputs from which every Week is derived: Weekly Duration, warm-up and cool-down length, a Day Preference per weekday, and a Shuffle. The only planning state the app stores.
+The persisted inputs from which every Week is derived: Weekly Duration, warm-up and cool-down length, a Day Preference per weekday, a Shuffle, and an optional 5K Time. The only planning state the app stores.
 _Avoid_: Template, config, profile
 
 **Weekly Duration**:
@@ -37,6 +37,14 @@ _Avoid_: Interval, set
 **Rep Length**:
 A Rep Format's tier, named by its target race pace: 15K (short reps), HM (medium reps) or 30K (long reps).
 _Avoid_: Short, medium, long
+
+**5K Time**:
+The runner's current 5K race time, from which every Rep Pace is derived.
+_Avoid_: PB, race time, fitness
+
+**Rep Pace**:
+The range of paces per km a Rep Length's reps are run at, from the runner's equivalent race pace for that distance given their 5K Time to slightly slower.
+_Avoid_: Training pace, target pace, zone
 
 **Recovery**:
 The standing or jogging break between reps, set by Rep Length: one minute for 15K and HM reps, two minutes for 30K reps.

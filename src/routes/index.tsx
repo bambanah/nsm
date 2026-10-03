@@ -27,6 +27,7 @@ import {
   type DayPreference,
   type PlanSettings,
 } from '@/planner/planner'
+import { formatDuration, formatRepPace, repPaces, type RepPaces } from '@/planner/rep-paces'
 import {
   DAY_PREFERENCE_LIMITS,
   validatePlanSettings,
@@ -51,6 +52,7 @@ interface FormState {
   coolDown: string
   dayPreferences: PlanSettings['dayPreferences']
   shuffle: number
+  fiveKTime: string
 }
 
 const toForm = (s: PlanSettings): FormState => ({
@@ -60,15 +62,24 @@ const toForm = (s: PlanSettings): FormState => ({
   coolDown: String(s.coolDownMinutes),
   dayPreferences: s.dayPreferences,
   shuffle: s.shuffle,
+  fiveKTime: s.fiveKSeconds === null ? '' : formatDuration(s.fiveKSeconds),
 })
 
 const parseMinutes = (value: string) => (value === '' ? Number.NaN : Number(value))
+
+function parseFiveKTime(value: string) {
+  const trimmed = value.trim()
+  if (trimmed === '') return null
+  const match = /^(\d{1,2}):([0-5]\d)$/.exec(trimmed)
+  return match ? Number(match[1]) * 60 + Number(match[2]) : Number.NaN
+}
 
 const samePlanSettings = (a: PlanSettings, b: PlanSettings) =>
   a.weeklyDurationMinutes === b.weeklyDurationMinutes &&
   a.warmUpMinutes === b.warmUpMinutes &&
   a.coolDownMinutes === b.coolDownMinutes &&
   a.shuffle === b.shuffle &&
+  a.fiveKSeconds === b.fiveKSeconds &&
   WEEKDAYS.every((d) => a.dayPreferences[d] === b.dayPreferences[d])
 
 const toSettings = (f: FormState): PlanSettings => ({
@@ -78,6 +89,7 @@ const toSettings = (f: FormState): PlanSettings => ({
   coolDownMinutes: parseMinutes(f.coolDown),
   dayPreferences: f.dayPreferences,
   shuffle: f.shuffle,
+  fiveKSeconds: parseFiveKTime(f.fiveKTime),
 })
 
 const PREFERENCE_LABELS: Record<DayPreference, string> = {
@@ -103,6 +115,7 @@ function Home() {
           coolDown: '10',
           dayPreferences: {},
           shuffle: randomShuffle(),
+          fiveKTime: '',
         },
   )
   const [actionError, setActionError] = useState<string>()
@@ -110,6 +123,7 @@ function Home() {
 
   const settings = toSettings(form)
   const errors = validatePlanSettings(settings)
+  const paces = settings.fiveKSeconds ? repPaces(settings.fiveKSeconds) : undefined
   const update = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }))
 
   useEffect(() => {
@@ -156,6 +170,13 @@ function Home() {
             <p className="text-lg font-semibold">
               {form.hours || 0}h {form.minutes || 0}m · {form.warmUp}′ warm-up · {form.coolDown}′
               cool-down
+              {paces && (
+                <>
+                  {' '}
+                  · 5K {formatDuration(settings.fiveKSeconds!)} · 15K {formatRepPace(paces['15K'])}{' '}
+                  · HM {formatRepPace(paces.HM)} · 30K {formatRepPace(paces['30K'])} /km
+                </>
+              )}
               {WEEKDAYS.filter((d) => form.dayPreferences[d]).map((d) => (
                 <span key={d} className="text-muted-foreground capitalize">
                   {' '}
@@ -215,6 +236,14 @@ function Home() {
                     onChange={(coolDown) => update({ coolDown })}
                   />
                 </Field>
+                <Field label="5K Time (mm:ss)" errors={errors} field="fiveKTime">
+                  <Input
+                    className="w-24 text-lg"
+                    placeholder="19:45"
+                    value={form.fiveKTime}
+                    onChange={(e) => update({ fiveKTime: e.target.value })}
+                  />
+                </Field>
               </div>
               <Field
                 label={
@@ -272,12 +301,12 @@ function Home() {
         </CardContent>
       </Card>
 
-      {errors.length === 0 && <Weeks settings={settings} />}
+      {errors.length === 0 && <Weeks settings={settings} repPaces={paces} />}
     </main>
   )
 }
 
-function Weeks({ settings }: { settings: PlanSettings }) {
+function Weeks({ settings, repPaces }: { settings: PlanSettings; repPaces?: RepPaces }) {
   const [today] = useState(() => new Date())
   const weeks = [
     { value: 'current', label: 'This week', monday: mondayOf(today) },
@@ -294,7 +323,7 @@ function Weeks({ settings }: { settings: PlanSettings }) {
       </TabsList>
       {weeks.map((w) => (
         <TabsContent key={w.value} value={w.value}>
-          <WeekView week={deriveWeek(settings, w.monday)} />
+          <WeekView week={deriveWeek(settings, w.monday)} repPaces={repPaces} />
         </TabsContent>
       ))}
     </Tabs>

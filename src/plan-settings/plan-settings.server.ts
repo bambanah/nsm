@@ -11,6 +11,7 @@ export async function findPlanSettings(userId: string): Promise<PlanSettings | n
       coolDownMinutes: planSettings.coolDownMinutes,
       dayPreferences: planSettings.dayPreferences,
       shuffle: planSettings.shuffle,
+      fiveKSeconds: planSettings.fiveKSeconds,
     })
     .from(planSettings)
     .where(eq(planSettings.userId, userId))

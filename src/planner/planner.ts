@@ -23,6 +23,7 @@ export interface PlanSettings {
   coolDownMinutes: number
   dayPreferences: Partial<Record<Weekday, Exclude<DayPreference, 'default'>>>
   shuffle: number
+  fiveKSeconds: number | null
 }
 
 export interface SubThresholdSession {

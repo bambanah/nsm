@@ -8,7 +8,8 @@ import {
   type SubThresholdSession,
   type Week,
 } from '@/planner/planner'
-import { RACE_PACES } from '@/planner/rep-formats'
+import { RACE_PACES, type RepLength } from '@/planner/rep-formats'
+import { formatRepPace, type RepPaces } from '@/planner/rep-paces'
 
 const TYPE_LABELS: Record<Day['type'], string> = {
   subT: 'Sub-threshold',
@@ -22,7 +23,7 @@ const dayOfMonth = (monday: string, offset: number) => {
   return new Date(y, m - 1, d + offset).getDate()
 }
 
-export function WeekView({ week }: { week: Week }) {
+export function WeekView({ week, repPaces }: { week: Week; repPaces?: RepPaces }) {
   const [selected, setSelected] = useState<number>()
   const selectedDay = selected === undefined ? undefined : week.days[selected]
   return (
@@ -65,7 +66,7 @@ export function WeekView({ week }: { week: Week }) {
           />
         ))}
       </ol>
-      {selectedDay && <DayBreakdown day={selectedDay} />}
+      {selectedDay && <DayBreakdown day={selectedDay} repPaces={repPaces} />}
     </div>
   )
 }
@@ -182,14 +183,15 @@ const DAY_TITLES: Record<Day['type'], string> = {
   rest: 'Rest Day',
 }
 
-function steps(day: Day) {
+function steps(day: Day, repPaces?: RepPaces) {
   const raw: { kind: StepKind; minutes: number; label: string }[] = []
   if (day.type === 'subT') {
     const { session } = day
     const { reps, repMinutes, repLength } = session.repFormat
+    const pace = repPaces ? ` · ${formatRepPace(repPaces[repLength])}/km` : ''
     raw.push({ kind: 'warmUp', minutes: session.warmUpMinutes, label: 'Warm-up' })
     for (let i = 1; i <= reps; i++) {
-      raw.push({ kind: 'rep', minutes: repMinutes, label: `Rep ${i} @${repLength}` })
+      raw.push({ kind: 'rep', minutes: repMinutes, label: `Rep ${i} @${repLength}${pace}` })
       if (i < reps)
         raw.push({ kind: 'recovery', minutes: session.recoveryMinutes, label: 'Recovery' })
     }
@@ -208,7 +210,7 @@ function steps(day: Day) {
 const clock = (minutes: number) =>
   `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
 
-function DayBreakdown({ day }: { day: Day }) {
+function DayBreakdown({ day, repPaces }: { day: Day; repPaces?: RepPaces }) {
   return (
     <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
       <h2 className="mb-3 text-lg font-extrabold">
@@ -223,7 +225,7 @@ function DayBreakdown({ day }: { day: Day }) {
         <p className="text-muted-foreground">No run today.</p>
       ) : (
         <ol>
-          {steps(day).map((step) => (
+          {steps(day, repPaces).map((step) => (
             <li
               key={step.start}
               className="flex items-center gap-3 border-b py-1.5 last:border-b-0"
@@ -242,10 +244,19 @@ function DayBreakdown({ day }: { day: Day }) {
         </ol>
       )}
       {day.type === 'subT' && (
-        <p className="mt-3 text-sm text-muted-foreground">
-          Run the reps at your current {RACE_PACES[day.session.repFormat.repLength]}.
-        </p>
+        <PaceNote repLength={day.session.repFormat.repLength} repPaces={repPaces} />
       )}
     </section>
+  )
+}
+
+function PaceNote({ repLength, repPaces }: { repLength: RepLength; repPaces?: RepPaces }) {
+  const racePace = RACE_PACES[repLength]
+  return (
+    <p className="mt-3 text-sm text-muted-foreground">
+      {repPaces
+        ? `Run the reps at ${formatRepPace(repPaces[repLength])}/km, from your current ${racePace} to slightly slower.`
+        : `Run the reps at your current ${racePace}.`}
+    </p>
   )
 }

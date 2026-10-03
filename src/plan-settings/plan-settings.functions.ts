@@ -14,6 +14,7 @@ const planSettingsSchema = z.object({
     .int()
     .min(0)
     .max(2 ** 31 - 1),
+  fiveKSeconds: z.number().nullable(),
 })
 
 export const getPlanSettings = createServerFn({ method: 'GET' }).handler(async () =>

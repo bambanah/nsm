@@ -17,6 +17,12 @@ import {
   TOLERANCE,
 } from '@/planner/planner'
 import { RACE_PACES, RECOVERY_MINUTES, REP_FORMATS, type RepLength } from '@/planner/rep-formats'
+import {
+  formatDuration,
+  REP_PACE_FIXED_WIDTH_FROM_SECONDS,
+  REP_PACE_FIXED_WIDTH_SECONDS,
+  REP_PACE_WIDTH_PERCENT,
+} from '@/planner/rep-paces'
 import { DAY_PREFERENCE_LIMITS } from '@/planner/validate'
 
 export const Route = createFileRoute('/how-it-works')({
@@ -214,10 +220,27 @@ function HowItWorks() {
       <Section id="pacing" title="Pacing">
         <p>
           A session's Rep Length names the race pace for its reps: @15K is 15K race pace, @HM
-          half-marathon race pace and @30K 30K race pace. Set them from your current fitness, not a
-          personal best or goal time. The planner does not compute paces; the{' '}
-          <ExternalLink href={NSM_GUIDE}>Norwegian Singles guide</ExternalLink> covers heart rate
-          and effort.
+          half-marathon race pace and @30K 30K race pace. Enter a 5K Time in Plan Settings and the
+          planner shows each Rep Pace, on the settings summary and on each Sub-threshold Session's
+          breakdown. Use a recent 5K race or time trial that reflects your current fitness, not a
+          personal best or goal time.
+        </p>
+        <p>
+          The guide says to use equivalent race paces from current fitness, and links to the{' '}
+          <ExternalLink href="https://lactrace.com/norwegian-singles">
+            Lactrace calculator
+          </ExternalLink>
+          . Like Lactrace, the planner finds the 15K, half-marathon and 30K times equivalent to your
+          5K Time with Jack Daniels' VDOT formula. Each Rep Pace runs from that race pace to{' '}
+          {REP_PACE_WIDTH_PERCENT}% slower, or {REP_PACE_FIXED_WIDTH_SECONDS} s/km slower at{' '}
+          {formatDuration(REP_PACE_FIXED_WIDTH_FROM_SECONDS)}/km and slower (<em>planner choice</em>
+          , matching Lactrace).
+        </p>
+        <p>
+          The paces are starting estimates. The{' '}
+          <ExternalLink href={NSM_GUIDE}>Norwegian Singles guide</ExternalLink> advises starting at
+          the slower end, reassessing with a race or time trial every 4-8 weeks, and checking heart
+          rate and effort as you go.
         </p>
       </Section>
 

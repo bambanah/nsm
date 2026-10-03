@@ -13,5 +13,6 @@ export const planSettings = pgTable('plan_settings', {
   coolDownMinutes: integer('cool_down_minutes').notNull(),
   dayPreferences: jsonb('day_preferences').$type<PlanSettings['dayPreferences']>().notNull(),
   shuffle: integer('shuffle').notNull(),
+  fiveKSeconds: integer('five_k_seconds'),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
