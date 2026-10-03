@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import type { Day, Week } from '@/planner/planner'
 
 const TYPE_LABELS: Record<Day['type'], string> = {
@@ -8,11 +8,12 @@ const TYPE_LABELS: Record<Day['type'], string> = {
   rest: 'Rest',
 }
 
-const dayMinutes = (day: Day) =>
-  day.type === 'subT' ? day.session.minutes : day.type === 'rest' ? 0 : day.minutes
+const dayOfMonth = (monday: string, offset: number) => {
+  const [y, m, d] = monday.split('-').map(Number)
+  return new Date(y, m - 1, d + offset).getDate()
+}
 
 export function WeekView({ week }: { week: Week }) {
-  const maxMinutes = Math.max(...week.days.map(dayMinutes))
   return (
     <div className="flex flex-col gap-5">
       <dl className="grid grid-cols-3 gap-3">
@@ -20,11 +21,11 @@ export function WeekView({ week }: { week: Week }) {
         <Stat label="Sub-threshold work" value={week.subThresholdWorkMinutes} unit="min" />
         <Stat label="Sub-threshold share" value={week.subThresholdPercent.toFixed(1)} unit="%" />
       </dl>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {week.days.map((day) => (
-          <DayCard key={day.weekday} day={day} maxMinutes={maxMinutes} />
+      <ol className="grid gap-2 lg:grid-cols-7">
+        {week.days.map((day, i) => (
+          <DayCell key={day.weekday} day={day} date={dayOfMonth(week.monday, i)} />
         ))}
-      </div>
+      </ol>
     </div>
   )
 }
@@ -43,65 +44,42 @@ function Stat({ label, value, unit }: { label: string; value: number | string; u
   )
 }
 
-function DayCard({ day, maxMinutes }: { day: Day; maxMinutes: number }) {
+function DayCell({ day, date }: { day: Day; date: number }) {
   const color = `var(--day-${day.type})`
-  const minutes = dayMinutes(day)
   return (
-    <Card
-      size="sm"
-      className="gap-2.5 shadow-none ring-foreground/5"
-      style={{ background: `color-mix(in oklch, ${color} 14%, var(--card))` }}
+    <li
+      className="flex items-center gap-4 rounded-xl border-l-4 p-3 ring-1 ring-foreground/5 lg:min-h-36 lg:flex-col lg:items-stretch lg:gap-2 lg:border-t-4 lg:border-l-0"
+      style={{ borderColor: color, background: `color-mix(in oklch, ${color} 10%, var(--card))` }}
     >
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between font-extrabold">
-          <span className="capitalize">{day.weekday}</span>
-          <span
-            className="rounded-md px-2 py-0.5 text-xs font-bold"
-            style={{ background: `color-mix(in oklch, ${color} 28%, var(--card))` }}
-          >
-            {TYPE_LABELS[day.type]}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-2.5">
+      <div className="flex w-10 shrink-0 flex-col items-center leading-tight lg:w-auto lg:flex-row lg:items-baseline lg:justify-between">
+        <span className="font-extrabold capitalize">{day.weekday.slice(0, 3)}</span>
+        <span className="text-sm font-semibold text-muted-foreground">{date}</span>
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5 lg:flex-none lg:gap-2">
+        <span className="text-xs font-bold" style={{ color }}>
+          {TYPE_LABELS[day.type]}
+        </span>
         {day.type === 'subT' && <SessionDetails session={day.session} />}
-        <div className="mt-auto flex flex-col gap-1.5">
-          <p className="text-2xl font-extrabold">
-            {day.type === 'rest' ? (
-              <span className="text-muted-foreground">Rest</span>
-            ) : (
-              <>
-                {minutes}
-                <span className="ml-1 text-base font-semibold text-muted-foreground">min</span>
-              </>
-            )}
-          </p>
-          <div
-            className="h-1.5 rounded-full"
-            style={{ background: `color-mix(in oklch, ${color} 25%, var(--card))` }}
-          >
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${(minutes / maxMinutes) * 100}%`, background: color }}
-            />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      {day.type !== 'rest' && (
+        <p className="text-2xl font-extrabold lg:mt-auto">
+          {day.type === 'subT' ? day.session.minutes : day.minutes}
+          <span className="ml-1 text-sm font-semibold text-muted-foreground">min</span>
+        </p>
+      )}
+    </li>
   )
 }
 
 function SessionDetails({ session }: { session: Extract<Day, { type: 'subT' }>['session'] }) {
   const { reps, repMinutes, repLength } = session.repFormat
+  const structure = `${session.warmUpMinutes}′ warm-up · 1′ rests · ${session.coolDownMinutes}′ cool-down`
   return (
-    <div className="flex flex-col gap-0.5">
-      <p className="text-2xl font-extrabold">
-        {reps}×{repMinutes}′
-        <span className="ml-2 text-base font-semibold text-muted-foreground">@{repLength}</span>
+    <div className="flex flex-col" title={structure}>
+      <p className="font-bold">
+        {reps}×{repMinutes}′ @{repLength}
       </p>
-      <p className="text-sm text-muted-foreground">
-        {session.warmUpMinutes}′ warm-up · 1′ rests · {session.coolDownMinutes}′ cool-down
-      </p>
+      <p className="truncate text-sm text-muted-foreground lg:hidden">{structure}</p>
     </div>
   )
 }
