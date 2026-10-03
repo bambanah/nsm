@@ -75,10 +75,10 @@ function HowItWorks() {
         </p>
         <p>
           NSM suggests 20-25% of weekly time once established; the planner aims for{' '}
-          {SUB_THRESHOLD_PERCENT}% up to {hours(TAPER_FROM_MINUTES)}. Above that the target eases to{' '}
-          {MIN_SUB_THRESHOLD_PERCENT}% at {hours(MAX_WEEKLY_DURATION_MINUTES)}, because the sources
-          say quality settles nearer 20-22% as volume rises, rather than workouts growing to hold
-          the share:
+          {SUB_THRESHOLD_PERCENT}% up to {hours(TAPER_FROM_MINUTES)} (<em>planner choice</em>).
+          Above that the target eases to {MIN_SUB_THRESHOLD_PERCENT}% at{' '}
+          {hours(MAX_WEEKLY_DURATION_MINUTES)}, because the sources say quality settles nearer
+          20-22% as weekly time rises, rather than Sub-threshold Sessions growing to hold the share:
         </p>
         <Formula>
           target = {SUB_THRESHOLD_PERCENT}% − {SUB_THRESHOLD_PERCENT - MIN_SUB_THRESHOLD_PERCENT} ×
@@ -106,10 +106,11 @@ function HowItWorks() {
         </p>
         <p>
           The planner picks one 30K session at random, then the 15K and HM sessions closest to half
-          of the remaining budget each. Up to {hours(SESSION_CAP_UNTIL_MINUTES)} no session has more
-          than {SESSION_WORK_CAP_MINUTES} rep minutes (<em>planner choice</em>, matching what sirpoc
-          ran at 7h); above that the easing target limits growth instead. Mixing Rep Lengths is for
-          variety: every Rep Format aims for the same sub-threshold effort.
+          of the remaining budget each (<em>planner choice</em>). Up to{' '}
+          {hours(SESSION_CAP_UNTIL_MINUTES)} no session has more than {SESSION_WORK_CAP_MINUTES} rep
+          minutes (<em>planner choice</em>, matching what sirpoc ran at 7h); above that the easing
+          target limits growth instead. Mixing Rep Lengths is for variety: every Rep Format aims for
+          the same sub-threshold effort.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -148,9 +149,10 @@ function HowItWorks() {
       <Section id="days" title="Placing the days">
         <p>
           Sub-threshold Sessions never fall on consecutive days (Sunday and Monday count), so an
-          easy day follows each one. Each session is sized so that one easy day is enough to
-          recover. With no Day Preferences they go on Tuesday, Thursday and Saturday, like the
-          guide's example week. Which session lands on which day changes from Week to Week.
+          easy day follows each one (<em>planner choice</em>, in line with the guide's example
+          week). Each session is sized so that one easy day is enough to recover. With no Day
+          Preferences they go on Tuesday, Thursday and Saturday, like the guide's example week (
+          <em>planner choice</em>). Which session lands on which day changes from Week to Week.
         </p>
       </Section>
 
@@ -162,14 +164,18 @@ function HowItWorks() {
           sessions.
         </p>
         <Formula>
-          Easy Run = (Weekly Duration − session minutes) ÷ (Easy Run days + {LONG_RUN_RATIO})
+          base Easy Run = (Weekly Duration − session minutes) ÷ (Easy Run days + {LONG_RUN_RATIO})
           <br />
-          Long Run = {LONG_RUN_RATIO} × Easy Run, kept between {MIN_LONG_RUN_MINUTES} and{' '}
+          Long Run = {LONG_RUN_RATIO} × base Easy Run, kept between {MIN_LONG_RUN_MINUTES} and{' '}
           {MAX_LONG_RUN_MINUTES} min
+          <br />
+          Easy Run = (Weekly Duration − session minutes − Long Run) ÷ Easy Run days
         </Formula>
         <p>
           At lower Weekly Durations the {MIN_LONG_RUN_MINUTES} min minimum makes it more than{' '}
-          {LONG_RUN_RATIO} × an Easy Run. It goes on Sunday, or Saturday if Sunday is taken.
+          {LONG_RUN_RATIO} × an Easy Run, and at higher ones the {MAX_LONG_RUN_MINUTES} min maximum
+          makes it less. It goes on Sunday, or Saturday if Sunday is taken (<em>planner choice</em>
+          ).
         </p>
       </Section>
 

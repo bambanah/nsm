@@ -142,11 +142,11 @@ function sessionBreakdown(session: SubThresholdSession) {
 }
 
 function longRunBreakdown(day: Extract<Day, { type: 'long' }>) {
-  const ratio = `${LONG_RUN_RATIO} × a ${Math.round(day.baseEasyRunMinutes)} min Easy Run`
-  if (day.minutes === day.ratioMinutes) return `About ${ratio}.`
+  if (day.minutes === day.ratioMinutes)
+    return `About ${LONG_RUN_RATIO} × a ${Math.round(day.baseEasyRunMinutes)} min Easy Run.`
   return day.minutes === MIN_LONG_RUN_MINUTES
-    ? `${ratio} is ${day.ratioMinutes} min, so it is raised to the ${MIN_LONG_RUN_MINUTES} min minimum.`
-    : `${ratio} is ${day.ratioMinutes} min, so it is lowered to the ${MAX_LONG_RUN_MINUTES} min maximum.`
+    ? `${LONG_RUN_RATIO} × an Easy Run would be ${day.ratioMinutes} min, so it is raised to the ${MIN_LONG_RUN_MINUTES} min minimum.`
+    : `${LONG_RUN_RATIO} × an Easy Run would be ${day.ratioMinutes} min, so it is lowered to the ${MAX_LONG_RUN_MINUTES} min maximum.`
 }
 
 function SessionDetails({ session }: { session: SubThresholdSession }) {
