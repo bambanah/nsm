@@ -1,4 +1,6 @@
-export type RepLength = '15K' | 'HM' | '30K'
+export const REP_LENGTHS = ['15K', 'HM', '30K'] as const
+
+export type RepLength = (typeof REP_LENGTHS)[number]
 
 export interface RepFormat {
   repLength: RepLength

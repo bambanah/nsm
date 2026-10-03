@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { deriveWeek, WEEKDAYS, type DayPreference, type PlanSettings, type Week } from './planner'
+import {
+  deadSessionChoices,
+  deriveWeek,
+  WEEKDAYS,
+  type DayPreference,
+  type PlanSettings,
+  type Week,
+} from './planner'
+import type { RepFormat } from './rep-formats'
 import { createRandom } from './random'
 import { validatePlanSettings } from './validate'
 
@@ -220,5 +228,58 @@ describe('deriveWeek', () => {
       expect(week.days.filter((d) => d.type === 'long')).toHaveLength(1)
     }
     expect(valid).toBeGreaterThan(500)
+  })
+})
+
+describe('deriveWeek with Session Choices', () => {
+  const threeByTwelve30K: RepFormat = { repLength: '30K', reps: 3, repMinutes: 12 }
+  const threeByTen30K: RepFormat = { repLength: '30K', reps: 3, repMinutes: 10 }
+
+  it('replaces only the chosen day’s session, with Recovery following the chosen Rep Length', () => {
+    everyWeek({}, (planned, s) => {
+      const [first, ...others] = subTDays(planned)
+      const repFormat: RepFormat = { repLength: '30K', reps: 2, repMinutes: 10 }
+      const week = deriveWeek(s, planned.monday, [{ weekday: first.weekday, repFormat }])
+      const chosen = subTDays(week)
+      expect(chosen.map((d) => d.weekday)).toEqual(subTDays(planned).map((d) => d.weekday))
+      expect(chosen[0].session).toMatchObject({ repFormat, recoveryMinutes: 2, workMinutes: 20 })
+      expect(chosen[0].plannerRepFormat).toEqual(first.session.repFormat)
+      expect(chosen.slice(1).map((d) => d.session)).toEqual(others.map((d) => d.session))
+    })
+  })
+
+  it('resizes the Easy and Long Runs so the Week still totals the Weekly Duration', () => {
+    everyWeek({ weeklyDurationMinutes: 540 }, (planned, s) => {
+      const week = deriveWeek(s, planned.monday, [
+        { weekday: subTDays(planned)[0].weekday, repFormat: threeByTwelve30K },
+      ])
+      expect(Math.abs(week.totalMinutes - 540)).toBeLessThanOrEqual(2)
+      expect(week.days.map((d) => d.type)).toEqual(planned.days.map((d) => d.type))
+    })
+  })
+
+  it('ignores and reports as dead choices on other days and choices over the per-session cap', () => {
+    everyWeek({ weeklyDurationMinutes: 420 }, (planned, s) => {
+      const otherDay = planned.days.find((d) => d.type !== 'subT')!.weekday
+      const subTDay = subTDays(planned)[0].weekday
+      const live = { weekday: subTDays(planned)[1].weekday, repFormat: threeByTen30K }
+      const dead = [
+        { weekday: otherDay, repFormat: threeByTen30K },
+        { weekday: subTDay, repFormat: threeByTwelve30K },
+      ]
+      const week = deriveWeek(s, planned.monday, [...dead, live])
+      expect(week).toEqual(deriveWeek(s, planned.monday, [live]))
+      expect(deadSessionChoices(s, planned.monday, [...dead, live])).toEqual(dead)
+    })
+  })
+
+  it('keeps choices over the per-session cap above 7h', () => {
+    const s = settings({ weeklyDurationMinutes: 421 })
+    const subTDay = subTDays(deriveWeek(s, mondays[0]))[0]
+    const choice = { weekday: subTDay.weekday, repFormat: threeByTwelve30K }
+    expect(subTDays(deriveWeek(s, mondays[0], [choice]))[0].session.repFormat).toEqual(
+      threeByTwelve30K,
+    )
+    expect(deadSessionChoices(s, mondays[0], [choice])).toEqual([])
   })
 })

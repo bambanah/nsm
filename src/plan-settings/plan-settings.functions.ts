@@ -1,8 +1,10 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireUserId } from '@/auth/auth.server'
+import { db } from '@/db/db.server'
 import { DAY_PREFERENCES, WEEKDAYS } from '@/planner/planner'
 import { validatePlanSettings } from '@/planner/validate'
+import { deleteDeadSessionChoices } from '@/session-choices/session-choices.server'
 import { findPlanSettings, upsertPlanSettings } from './plan-settings.server'
 
 const planSettingsSchema = z.object({
@@ -27,5 +29,8 @@ export const savePlanSettings = createServerFn({ method: 'POST' })
     const userId = await requireUserId()
     const errors = validatePlanSettings(data)
     if (errors.length > 0) throw new Error(errors.map((e) => e.message).join(', '))
-    await upsertPlanSettings(userId, data)
+    await db.transaction(async (tx) => {
+      await upsertPlanSettings(userId, data, tx)
+      await deleteDeadSessionChoices(userId, data, tx)
+    })
   })

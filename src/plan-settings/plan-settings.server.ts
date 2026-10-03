@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { db } from '@/db/db.server'
+import { db, type Executor } from '@/db/db.server'
 import { planSettings } from '@/db/schema'
 import type { PlanSettings } from '@/planner/planner'
 
@@ -18,9 +18,13 @@ export async function findPlanSettings(userId: string): Promise<PlanSettings | n
   return row ?? null
 }
 
-export async function upsertPlanSettings(userId: string, settings: PlanSettings) {
+export async function upsertPlanSettings(
+  userId: string,
+  settings: PlanSettings,
+  executor: Executor = db,
+) {
   const values = { ...settings, updatedAt: new Date() }
-  await db
+  await executor
     .insert(planSettings)
     .values({ userId, ...values })
     .onConflictDoUpdate({ target: planSettings.userId, set: values })

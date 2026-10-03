@@ -19,15 +19,21 @@ import { WeekView } from '@/components/week-view'
 import { authClient } from '@/auth/auth-client'
 import { getUser } from '@/auth/auth.functions'
 import { getPlanSettings, savePlanSettings } from '@/plan-settings/plan-settings.functions'
+import {
+  deleteSessionChoice,
+  getSessionChoices,
+  setSessionChoice,
+} from '@/session-choices/session-choices.functions'
+import type { WeekSessionChoice } from '@/session-choices/session-choices.server'
 import { mondayOf } from '@/lib/week-dates'
 import {
-  deriveWeek,
   randomShuffle,
   WEEKDAYS,
   type DayPreference,
   type PlanSettings,
+  type Weekday,
 } from '@/planner/planner'
-import type { RepLength } from '@/planner/rep-formats'
+import { REP_LENGTHS, type RepFormat } from '@/planner/rep-formats'
 import { formatDuration, formatRepPace, repPaces, type RepPaces } from '@/planner/rep-paces'
 import {
   DAY_PREFERENCE_LIMITS,
@@ -42,7 +48,10 @@ export const Route = createFileRoute('/')({
     if (!user) throw redirect({ to: '/sign-in' })
     return { user }
   },
-  loader: () => getPlanSettings(),
+  loader: async () => {
+    const [settings, sessionChoices] = await Promise.all([getPlanSettings(), getSessionChoices()])
+    return { settings, sessionChoices }
+  },
   component: Home,
 })
 
@@ -93,8 +102,6 @@ const toSettings = (f: FormState): PlanSettings => ({
   fiveKSeconds: parseFiveKTime(f.fiveKTime),
 })
 
-const REP_LENGTHS: RepLength[] = ['15K', 'HM', '30K']
-
 const STAT_LABEL = 'text-xs font-semibold tracking-wider text-muted-foreground uppercase'
 
 const PREFERENCE_LABELS: Record<DayPreference, string> = {
@@ -106,7 +113,7 @@ const PREFERENCE_LABELS: Record<DayPreference, string> = {
 }
 
 function Home() {
-  const saved = Route.useLoaderData()
+  const { settings: saved, sessionChoices } = Route.useLoaderData()
   const { user } = Route.useRouteContext()
   const router = useRouter()
   const navigate = useNavigate()
@@ -145,6 +152,18 @@ function Home() {
     }, 600)
     return () => clearTimeout(timeout)
   }, [form, saved, router])
+
+  const chooseSession = async (monday: string, weekday: Weekday, repFormat?: RepFormat) => {
+    setActionError(undefined)
+    try {
+      await (repFormat
+        ? setSessionChoice({ data: { monday, weekday, repFormat } })
+        : deleteSessionChoice({ data: { monday, weekday } }))
+      await router.invalidate()
+    } catch (e) {
+      setActionError((e as Error).message)
+    }
+  }
 
   const signOut = async () => {
     await authClient.signOut()
@@ -326,8 +345,10 @@ function Home() {
       {errors.length === 0 && (
         <Weeks
           settings={settings}
+          sessionChoices={sessionChoices}
           repPaces={paces}
           onReshuffle={() => update({ shuffle: randomShuffle() })}
+          onChooseSession={chooseSession}
         />
       )}
     </main>
@@ -336,12 +357,16 @@ function Home() {
 
 function Weeks({
   settings,
+  sessionChoices,
   repPaces,
   onReshuffle,
+  onChooseSession,
 }: {
   settings: PlanSettings
+  sessionChoices: WeekSessionChoice[]
   repPaces?: RepPaces
   onReshuffle: () => void
+  onChooseSession: (monday: string, weekday: Weekday, repFormat?: RepFormat) => void
 }) {
   const [today] = useState(() => new Date())
   const weeks = [
@@ -360,9 +385,12 @@ function Weeks({
       {weeks.map((w) => (
         <TabsContent key={w.value} value={w.value}>
           <WeekView
-            week={deriveWeek(settings, w.monday)}
+            settings={settings}
+            monday={w.monday}
+            sessionChoices={sessionChoices.filter((c) => c.monday === w.monday)}
             repPaces={repPaces}
             onReshuffle={onReshuffle}
+            onChooseSession={(weekday, repFormat) => onChooseSession(w.monday, weekday, repFormat)}
           />
         </TabsContent>
       ))}

@@ -35,8 +35,13 @@ export interface SubThresholdSession {
   minutes: number
 }
 
+export interface SessionChoice {
+  weekday: Weekday
+  repFormat: RepFormat
+}
+
 export type Day = { weekday: Weekday } & (
-  | { type: 'subT'; session: SubThresholdSession }
+  | { type: 'subT'; session: SubThresholdSession; plannerRepFormat: RepFormat }
   | { type: 'easy'; minutes: number }
   | { type: 'long'; minutes: number }
   | { type: 'rest'; merged?: true }
@@ -66,7 +71,11 @@ export const TAPER_FROM_MINUTES = 420
 export const TOLERANCE = 1.5
 const MAX_ATTEMPTS = 30
 
-export function deriveWeek(settings: PlanSettings, monday: string): Week {
+export function deriveWeek(
+  settings: PlanSettings,
+  monday: string,
+  sessionChoices: SessionChoice[] = [],
+): Week {
   const random = createRandom(`${settings.shuffle}:${monday}`)
   const minutes = settings.weeklyDurationMinutes
   let closest: { days: Day[]; distance: number } | undefined
@@ -76,7 +85,7 @@ export function deriveWeek(settings: PlanSettings, monday: string): Week {
     const share = (sum(repFormats.map(workMinutes)) / minutes) * 100
     const distance = Math.abs(share - subThresholdTarget(minutes))
     if (closest && distance >= closest.distance) continue
-    const days = planDays(settings, repFormats, random)
+    const days = planDays(settings, repFormats, sessionChoices, random)
     if (!days) continue
     if (distance <= TOLERANCE) return summarise(settings, monday, days)
     closest = { days, distance }
@@ -85,9 +94,23 @@ export function deriveWeek(settings: PlanSettings, monday: string): Week {
   throw new Error('Could not place the Sub-threshold Sessions on non-adjacent days')
 }
 
+export function deadSessionChoices<T extends SessionChoice>(
+  settings: PlanSettings,
+  monday: string,
+  sessionChoices: T[],
+): T[] {
+  const { days } = deriveWeek(settings, monday)
+  return sessionChoices.filter(
+    (c) =>
+      days.find((d) => d.weekday === c.weekday)?.type !== 'subT' ||
+      exceedsSessionCap(c.repFormat, settings.weeklyDurationMinutes),
+  )
+}
+
 function planDays(
   settings: PlanSettings,
   repFormats: RepFormat[],
+  sessionChoices: SessionChoice[],
   random: Random,
 ): Day[] | undefined {
   const minutes = settings.weeklyDurationMinutes
@@ -95,14 +118,20 @@ function planDays(
   const preferredSubT = daysPreferring(settings, 'subT')
   const defaults = daysPreferring(settings, 'default')
 
-  const sessions = repFormats.map((repFormat) => toSession(repFormat, settings))
-  const need = sessions.length - preferredSubT.length
+  const need = repFormats.length - preferredSubT.length
   const placed =
     preferredSubT.length > 0
       ? findSpacingWithExisting(defaults, need, preferredSubT, random)
       : findSpacing(defaults, need, random)
   const subTDays = sortWeekdays([...preferredSubT, ...placed])
-  if (subTDays.length !== sessions.length || !isWellSpaced(subTDays)) return
+  if (subTDays.length !== repFormats.length || !isWellSpaced(subTDays)) return
+
+  const sessions = subTDays.map((weekday, i) => {
+    const chosen = sessionChoices.find(
+      (c) => c.weekday === weekday && !exceedsSessionCap(c.repFormat, minutes),
+    )
+    return toSession(chosen?.repFormat ?? repFormats[i], settings)
+  })
 
   const longCandidates = WEEKDAYS.filter(
     (d) => !subTDays.includes(d) && (preference(d) === 'default' || preference(d) === 'long'),
@@ -135,7 +164,13 @@ function planDays(
 
   return WEEKDAYS.map((weekday): Day => {
     const subTIndex = subTDays.indexOf(weekday)
-    if (subTIndex >= 0) return { weekday, type: 'subT', session: sessions[subTIndex] }
+    if (subTIndex >= 0)
+      return {
+        weekday,
+        type: 'subT',
+        session: sessions[subTIndex],
+        plannerRepFormat: repFormats[subTIndex],
+      }
     if (weekday === longDay) return { weekday, type: 'long', minutes: longMinutes }
     const easyRun = easyRuns.find((r) => r.weekday === weekday)
     if (easyRun) return { weekday, type: 'easy', minutes: easyRun.minutes }
@@ -202,10 +237,13 @@ export function subThresholdTarget(weeklyDurationMinutes: number) {
 const subThresholdBudget = (weeklyDurationMinutes: number) =>
   Math.round((weeklyDurationMinutes * subThresholdTarget(weeklyDurationMinutes)) / 100)
 
+export const exceedsSessionCap = (repFormat: RepFormat, weeklyDurationMinutes: number) =>
+  weeklyDurationMinutes <= SESSION_CAP_UNTIL_MINUTES &&
+  workMinutes(repFormat) > SESSION_WORK_CAP_MINUTES
+
 function selectRepFormats(minutes: number, random: Random): RepFormat[] {
-  const cap = minutes <= SESSION_CAP_UNTIL_MINUTES ? SESSION_WORK_CAP_MINUTES : Infinity
   const capped = (repLength: RepFormat['repLength']) =>
-    REP_FORMATS.filter((f) => f.repLength === repLength && workMinutes(f) <= cap)
+    REP_FORMATS.filter((f) => f.repLength === repLength && !exceedsSessionCap(f, minutes))
 
   const thirtyK = random.pick(capped('30K'))
   const remainder = Math.max(0, subThresholdBudget(minutes) - workMinutes(thirtyK))

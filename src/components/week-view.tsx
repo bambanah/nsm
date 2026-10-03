@@ -5,12 +5,27 @@ import { Explained } from '@/components/explained'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  deriveWeek,
+  exceedsSessionCap,
+  SESSION_CAP_UNTIL_MINUTES,
+  SESSION_WORK_CAP_MINUTES,
   SHORT_EASY_RUN_MINUTES,
   type Day,
+  type PlanSettings,
+  type SessionChoice,
   type SubThresholdSession,
-  type Week,
+  type Weekday,
 } from '@/planner/planner'
-import { RACE_PACES, type RepLength } from '@/planner/rep-formats'
+import { RACE_PACES, REP_FORMATS, type RepFormat, type RepLength } from '@/planner/rep-formats'
 import { formatRepPace, type RepPaces } from '@/planner/rep-paces'
 
 const TYPE_LABELS: Record<Day['type'], string> = {
@@ -26,14 +41,21 @@ const dayOfMonth = (monday: string, offset: number) => {
 }
 
 export function WeekView({
-  week,
+  settings,
+  monday,
+  sessionChoices,
   repPaces,
   onReshuffle,
+  onChooseSession,
 }: {
-  week: Week
+  settings: PlanSettings
+  monday: string
+  sessionChoices: SessionChoice[]
   repPaces?: RepPaces
   onReshuffle: () => void
+  onChooseSession: (weekday: Weekday, repFormat?: RepFormat) => void
 }) {
+  const week = deriveWeek(settings, monday, sessionChoices)
   const [selected, setSelected] = useState<number>()
   const selectedDay = selected === undefined ? undefined : week.days[selected]
   return (
@@ -87,7 +109,23 @@ export function WeekView({
           />
         ))}
       </ol>
-      {selectedDay && <DayBreakdown day={selectedDay} repPaces={repPaces} />}
+      {selectedDay && (
+        <DayBreakdown
+          day={selectedDay}
+          repPaces={repPaces}
+          sessionPicker={
+            selectedDay.type === 'subT' && (
+              <SessionPicker
+                day={selectedDay}
+                settings={settings}
+                monday={monday}
+                sessionChoices={sessionChoices}
+                onChoose={(repFormat) => onChooseSession(selectedDay.weekday, repFormat)}
+              />
+            )
+          }
+        />
+      )}
     </div>
   )
 }
@@ -173,12 +211,9 @@ function DayCell({
 }
 
 function SessionDetails({ session }: { session: SubThresholdSession }) {
-  const { reps, repMinutes, repLength } = session.repFormat
   return (
     <div className="flex flex-col">
-      <p className="font-bold">
-        {reps}×{repMinutes}′ @{repLength}
-      </p>
+      <p className="font-bold">{repFormatLabel(session.repFormat)}</p>
       <p className="truncate text-sm text-muted-foreground lg:hidden">
         {session.warmUpMinutes}′ warm-up · {session.recoveryMinutes}′ Recoveries ·{' '}
         {session.coolDownMinutes}′ cool-down
@@ -231,13 +266,24 @@ function steps(day: Day, repPaces?: RepPaces) {
 const clock = (minutes: number) =>
   `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
 
-function DayBreakdown({ day, repPaces }: { day: Day; repPaces?: RepPaces }) {
+function DayBreakdown({
+  day,
+  repPaces,
+  sessionPicker,
+}: {
+  day: Day
+  repPaces?: RepPaces
+  sessionPicker: React.ReactNode
+}) {
   return (
     <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-      <h2 className="mb-3 text-lg font-extrabold">
-        <span className="capitalize">{day.weekday}</span> · {DAY_TITLES[day.type]}
+      <h2 className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-lg font-extrabold">
+        <span>
+          <span className="capitalize">{day.weekday}</span> · {DAY_TITLES[day.type]}
+        </span>
+        {sessionPicker}
         {day.type !== 'rest' && (
-          <span className="ml-2 text-muted-foreground">
+          <span className="text-muted-foreground">
             {day.type === 'subT' ? day.session.minutes : day.minutes} min
           </span>
         )}
@@ -268,6 +314,90 @@ function DayBreakdown({ day, repPaces }: { day: Day; repPaces?: RepPaces }) {
         <PaceNote repLength={day.session.repFormat.repLength} repPaces={repPaces} />
       )}
     </section>
+  )
+}
+
+const repFormatLabel = ({ reps, repMinutes, repLength }: RepFormat) =>
+  `${reps}×${repMinutes}′ @${repLength}`
+
+const PLANNER = 'planner'
+
+const CAP_REASON = `Over the ${SESSION_WORK_CAP_MINUTES} min per-session cap up to ${SESSION_CAP_UNTIL_MINUTES / 60}h`
+
+function SessionPicker({
+  day,
+  settings,
+  monday,
+  sessionChoices,
+  onChoose,
+}: {
+  day: Extract<Day, { type: 'subT' }>
+  settings: PlanSettings
+  monday: string
+  sessionChoices: SessionChoice[]
+  onChoose: (repFormat?: RepFormat) => void
+}) {
+  const others = sessionChoices.filter((c) => c.weekday !== day.weekday)
+  const shareLabel = (repFormat?: RepFormat) =>
+    deriveWeek(settings, monday, [
+      ...others,
+      ...(repFormat ? [{ weekday: day.weekday, repFormat }] : []),
+    ]).subThresholdPercent.toFixed(1)
+  const plannerLabel = repFormatLabel(day.plannerRepFormat)
+  const current = repFormatLabel(day.session.repFormat)
+  return (
+    <Select
+      value={current === plannerLabel ? PLANNER : current}
+      onValueChange={(value) =>
+        onChoose(
+          value === PLANNER || value === plannerLabel
+            ? undefined
+            : REP_FORMATS.find((f) => repFormatLabel(f) === value),
+        )
+      }
+    >
+      <SelectTrigger size="sm" className="font-extrabold">
+        <SelectValue>
+          {current}
+          {current === plannerLabel && (
+            <span className="font-semibold text-muted-foreground">(planner)</span>
+          )}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={PLANNER}>
+          <ShareOption label={`${plannerLabel} (planner)`} share={shareLabel()} />
+        </SelectItem>
+        {Object.entries(RACE_PACES).map(([repLength, racePace]) => (
+          <SelectGroup key={repLength}>
+            <SelectLabel>{racePace}</SelectLabel>
+            {REP_FORMATS.filter((f) => f.repLength === repLength).map((f) => {
+              const overCap = exceedsSessionCap(f, settings.weeklyDurationMinutes)
+              return (
+                <SelectItem key={repFormatLabel(f)} value={repFormatLabel(f)} disabled={overCap}>
+                  <ShareOption
+                    label={repFormatLabel(f)}
+                    share={overCap ? undefined : shareLabel(f)}
+                    reason={overCap ? CAP_REASON : undefined}
+                  />
+                </SelectItem>
+              )
+            })}
+          </SelectGroup>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
+function ShareOption({ label, share, reason }: { label: string; share?: string; reason?: string }) {
+  return (
+    <>
+      <span className="font-semibold">{label}</span>
+      <span className="text-sm text-muted-foreground">
+        {share !== undefined ? `${share}% share` : reason}
+      </span>
+    </>
   )
 }
 

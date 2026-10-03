@@ -109,7 +109,8 @@ What the primary sources say about each rule in `src/planner/planner.ts` and `sr
 
 - Sources disagree with the app: (1) long run sizing: the sources use ~1.7x an easy run (about 18-19% of a 7 h week, 75-105 min), the app uses 25% of the week up to 135 min; (2) uncapped session work above 7 h: the sources prefer easy doubles and a share falling to 20-22%; (3) a fixed 1-minute recovery: the guide/book use 60-90 s for ~6 min reps and 90-120 s for ~10 min reps (the 2023 thread used 60 s throughout); (4) 23% applied to two-session weeks: the guide says not to force the proportion while on two sessions.
 - No source for the specific numbers: 23% ±1.5 (the sources say 20-25%), the 60-minute two-vs-three switch, the 25-minute per-session cap at 5 h, and merging easy runs of 25 minutes or less. All come from threshold.works.
-- Supported: counting rep minutes only, the one long / medium / short template with 15K / HM / 30K paces and time-based reps, non-adjacent quality days on Tue/Thu/Sat, the long run on Sunday and easy, everything else easy, and ~35 min per session at 7 h.
+- Agreed with but not required: the one long / medium / short template. The guide's example week runs Tue long / Thu medium / Sat short, but sirpoc says every format reaches "the same state of sub threshold" and the variety is psychological. One session of each Rep Length per week comes from threshold.works and is a planner choice.
+- Supported: counting rep minutes only, 15K / HM / 30K paces with time-based reps, non-adjacent quality days on Tue/Thu/Sat, the long run on Sunday and easy, everything else easy, and ~35 min per session at 7 h.
 
 ## Sources
 
