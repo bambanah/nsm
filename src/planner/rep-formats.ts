@@ -6,6 +6,12 @@ export interface RepFormat {
   repMinutes: number
 }
 
+export const RACE_PACES: Record<RepLength, string> = {
+  '15K': '15K race pace',
+  HM: 'half-marathon race pace',
+  '30K': '30K race pace',
+}
+
 export const RECOVERY_MINUTES: Record<RepLength, number> = { '15K': 1, HM: 1, '30K': 2 }
 
 export const workMinutes = (f: RepFormat) => f.reps * f.repMinutes

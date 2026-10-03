@@ -9,19 +9,13 @@ import {
   type SubThresholdSession,
   type Week,
 } from '@/planner/planner'
-import type { RepLength } from '@/planner/rep-formats'
+import { RACE_PACES } from '@/planner/rep-formats'
 
 const TYPE_LABELS: Record<Day['type'], string> = {
   subT: 'Sub-threshold',
   easy: 'Easy',
   long: 'Long',
   rest: 'Rest',
-}
-
-const RACE_PACES: Record<RepLength, string> = {
-  '15K': '15K',
-  HM: 'half-marathon',
-  '30K': '30K',
 }
 
 const dayOfMonth = (monday: string, offset: number) => {
@@ -157,7 +151,7 @@ function SessionDetails({ session }: { session: SubThresholdSession }) {
         {reps}×{repMinutes}′{' '}
         <Explained
           section="pacing"
-          explanation={`Run the reps at your current ${RACE_PACES[repLength]} race pace.`}
+          explanation={`Run the reps at your current ${RACE_PACES[repLength]}.`}
         >
           @{repLength}
         </Explained>

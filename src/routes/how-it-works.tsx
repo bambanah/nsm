@@ -16,7 +16,7 @@ import {
   TAPER_FROM_MINUTES,
   TOLERANCE,
 } from '@/planner/planner'
-import { RECOVERY_MINUTES, REP_FORMATS, type RepLength } from '@/planner/rep-formats'
+import { RACE_PACES, RECOVERY_MINUTES, REP_FORMATS, type RepLength } from '@/planner/rep-formats'
 import { DAY_PREFERENCE_LIMITS } from '@/planner/validate'
 
 export const Route = createFileRoute('/how-it-works')({
@@ -25,12 +25,6 @@ export const Route = createFileRoute('/how-it-works')({
 })
 
 const hours = (minutes: number) => `${minutes / 60}h`
-
-const REP_LENGTHS: { repLength: RepLength; pace: string }[] = [
-  { repLength: '15K', pace: '15K race pace' },
-  { repLength: 'HM', pace: 'Half-marathon race pace' },
-  { repLength: '30K', pace: '30K race pace' },
-]
 
 const NSM_GUIDE = 'https://norwegiansingles.run/'
 
@@ -122,12 +116,12 @@ function HowItWorks() {
               </tr>
             </thead>
             <tbody>
-              {REP_LENGTHS.map(({ repLength, pace }) => (
+              {(Object.keys(RACE_PACES) as RepLength[]).map((repLength) => (
                 <tr key={repLength} className="border-t border-foreground/10 align-top">
                   <td className="py-2 pr-4">
                     <span className="font-bold">{repLength}</span>
                     <br />
-                    <span className="text-sm text-muted-foreground">{pace}</span>
+                    <span className="text-sm text-muted-foreground">{RACE_PACES[repLength]}</span>
                   </td>
                   <td className="py-2 pr-4 whitespace-nowrap">{RECOVERY_MINUTES[repLength]} min</td>
                   <td className="py-2">
