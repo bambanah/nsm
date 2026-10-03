@@ -39,7 +39,7 @@ function HowItWorks() {
     <main className="mx-auto flex max-w-3xl flex-col gap-8 p-4 sm:p-8">
       <header className="flex items-center justify-between">
         <Link to="/" className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-          NSM Planner <span className="text-primary">•</span>
+          NSM
         </Link>
         <ThemeMenu />
       </header>

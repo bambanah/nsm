@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { ShuffleIcon } from 'lucide-react'
 import { cn } from 'cn'
 import { Explained } from '@/components/explained'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   SHORT_EASY_RUN_MINUTES,
@@ -23,38 +25,57 @@ const dayOfMonth = (monday: string, offset: number) => {
   return new Date(y, m - 1, d + offset).getDate()
 }
 
-export function WeekView({ week, repPaces }: { week: Week; repPaces?: RepPaces }) {
+export function WeekView({
+  week,
+  repPaces,
+  onReshuffle,
+}: {
+  week: Week
+  repPaces?: RepPaces
+  onReshuffle: () => void
+}) {
   const [selected, setSelected] = useState<number>()
   const selectedDay = selected === undefined ? undefined : week.days[selected]
   return (
     <div className="flex flex-col gap-5">
-      <dl className="grid grid-cols-3 gap-3">
-        <Stat label="Total" value={week.totalMinutes} unit="min" />
-        <Stat
-          label={
-            <Explained
-              section="budget"
-              explanation="Rep minutes only. Warm-ups, cool-downs and Recoveries count as easy time."
-            >
-              Sub-threshold work
-            </Explained>
-          }
-          value={week.subThresholdWorkMinutes}
-          unit="min"
-        />
-        <Stat
-          label={
-            <Explained
-              section="budget"
-              explanation={`Sub-threshold work ÷ total running time. The target at this Weekly Duration is ${week.subThresholdTargetPercent}%.`}
-            >
-              Sub-threshold share
-            </Explained>
-          }
-          value={week.subThresholdPercent.toFixed(1)}
-          unit="%"
-        />
-      </dl>
+      <div className="flex items-center gap-3">
+        <dl className="grid flex-1 grid-cols-3 gap-3">
+          <Stat label="Total" value={week.totalMinutes} unit="min" />
+          <Stat
+            label={
+              <Explained
+                section="budget"
+                explanation="Rep minutes only. Warm-ups, cool-downs and Recoveries count as easy time."
+              >
+                Sub-threshold work
+              </Explained>
+            }
+            value={week.subThresholdWorkMinutes}
+            unit="min"
+          />
+          <Stat
+            label={
+              <Explained
+                section="budget"
+                explanation={`Sub-threshold work ÷ total running time. The target at this Weekly Duration is ${week.subThresholdTargetPercent}%.`}
+              >
+                Sub-threshold share
+              </Explained>
+            }
+            value={week.subThresholdPercent.toFixed(1)}
+            unit="%"
+          />
+        </dl>
+        <Button
+          variant="secondary"
+          size="icon"
+          aria-label="Reshuffle"
+          title="Reshuffle"
+          onClick={onReshuffle}
+        >
+          <ShuffleIcon />
+        </Button>
+      </div>
       <ol className="grid gap-2 lg:grid-cols-7">
         {week.days.map((day, i) => (
           <DayCell

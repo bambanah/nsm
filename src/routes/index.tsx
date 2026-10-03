@@ -27,6 +27,7 @@ import {
   type DayPreference,
   type PlanSettings,
 } from '@/planner/planner'
+import type { RepLength } from '@/planner/rep-formats'
 import { formatDuration, formatRepPace, repPaces, type RepPaces } from '@/planner/rep-paces'
 import {
   DAY_PREFERENCE_LIMITS,
@@ -92,6 +93,10 @@ const toSettings = (f: FormState): PlanSettings => ({
   fiveKSeconds: parseFiveKTime(f.fiveKTime),
 })
 
+const REP_LENGTHS: RepLength[] = ['15K', 'HM', '30K']
+
+const STAT_LABEL = 'text-xs font-semibold tracking-wider text-muted-foreground uppercase'
+
 const PREFERENCE_LABELS: Record<DayPreference, string> = {
   default: 'Default',
   rest: 'Rest',
@@ -149,13 +154,13 @@ function Home() {
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-5 p-4 sm:p-8">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-          NSM Planner <span className="text-primary">•</span>
-        </h1>
-        <div className="flex items-center gap-3">
+        <div className="flex items-baseline gap-4">
+          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">NSM</h1>
           <Link to="/how-it-works" className="font-semibold text-primary hover:underline">
             How this works
           </Link>
+        </div>
+        <div className="flex items-center gap-3">
           <span className="hidden text-muted-foreground sm:inline">{user.name}</span>
           <ThemeMenu />
           <Button variant="outline" size="sm" onClick={signOut}>
@@ -170,13 +175,6 @@ function Home() {
             <p className="text-lg font-semibold">
               {form.hours || 0}h {form.minutes || 0}m · {form.warmUp}′ warm-up · {form.coolDown}′
               cool-down
-              {paces && (
-                <>
-                  {' '}
-                  · 5K {formatDuration(settings.fiveKSeconds!)} · 15K {formatRepPace(paces['15K'])}{' '}
-                  · HM {formatRepPace(paces.HM)} · 30K {formatRepPace(paces['30K'])} /km
-                </>
-              )}
               {WEEKDAYS.filter((d) => form.dayPreferences[d]).map((d) => (
                 <span key={d} className="text-muted-foreground capitalize">
                   {' '}
@@ -184,19 +182,49 @@ function Home() {
                 </span>
               ))}
             </p>
-            <div className="flex items-center gap-2">
-              <Button variant="secondary" onClick={() => update({ shuffle: randomShuffle() })}>
-                Reshuffle
-              </Button>
-              <Button
-                variant="outline"
-                aria-expanded={expanded}
-                onClick={() => setExpanded(!expanded)}
-              >
-                Edit
-                <ChevronDownIcon className={expanded ? 'rotate-180' : undefined} />
-              </Button>
+            <Button
+              variant="outline"
+              aria-expanded={expanded}
+              onClick={() => setExpanded(!expanded)}
+            >
+              Edit
+              <ChevronDownIcon className={expanded ? 'rotate-180' : undefined} />
+            </Button>
+          </div>
+          <div className="flex flex-col gap-2 border-t pt-4">
+            <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="five-k-time" className={STAT_LABEL}>
+                  5K Time
+                </Label>
+                <Input
+                  id="five-k-time"
+                  className="h-auto w-24 py-0.5 text-2xl font-extrabold tabular-nums"
+                  placeholder="19:45"
+                  value={form.fiveKTime}
+                  onChange={(e) => update({ fiveKTime: e.target.value })}
+                />
+              </div>
+              {paces &&
+                REP_LENGTHS.map((repLength) => (
+                  <div key={repLength} className="flex flex-col gap-1">
+                    <span className={STAT_LABEL}>{repLength} pace</span>
+                    <span className="text-2xl font-extrabold text-primary tabular-nums">
+                      {formatRepPace(paces[repLength])}
+                      <span className="ml-0.5 text-sm font-semibold text-muted-foreground">
+                        /km
+                      </span>
+                    </span>
+                  </div>
+                ))}
             </div>
+            {errors
+              .filter((e) => e.field === 'fiveKTime')
+              .map((e) => (
+                <p key={e.message} className="text-destructive">
+                  {e.message}
+                </p>
+              ))}
           </div>
           {expanded && (
             <>
@@ -234,14 +262,6 @@ function Home() {
                     value={form.coolDown}
                     max={99}
                     onChange={(coolDown) => update({ coolDown })}
-                  />
-                </Field>
-                <Field label="5K Time (mm:ss)" errors={errors} field="fiveKTime">
-                  <Input
-                    className="w-24 text-lg"
-                    placeholder="19:45"
-                    value={form.fiveKTime}
-                    onChange={(e) => update({ fiveKTime: e.target.value })}
                   />
                 </Field>
               </div>
@@ -291,7 +311,9 @@ function Home() {
             </>
           )}
           {[
-            ...(expanded ? [] : errors.map((e) => e.message)),
+            ...(expanded
+              ? []
+              : errors.filter((e) => e.field !== 'fiveKTime').map((e) => e.message)),
             ...(actionError ? [actionError] : []),
           ].map((message) => (
             <p key={message} className="-mt-3 text-destructive">
@@ -301,12 +323,26 @@ function Home() {
         </CardContent>
       </Card>
 
-      {errors.length === 0 && <Weeks settings={settings} repPaces={paces} />}
+      {errors.length === 0 && (
+        <Weeks
+          settings={settings}
+          repPaces={paces}
+          onReshuffle={() => update({ shuffle: randomShuffle() })}
+        />
+      )}
     </main>
   )
 }
 
-function Weeks({ settings, repPaces }: { settings: PlanSettings; repPaces?: RepPaces }) {
+function Weeks({
+  settings,
+  repPaces,
+  onReshuffle,
+}: {
+  settings: PlanSettings
+  repPaces?: RepPaces
+  onReshuffle: () => void
+}) {
   const [today] = useState(() => new Date())
   const weeks = [
     { value: 'current', label: 'This week', monday: mondayOf(today) },
@@ -323,7 +359,11 @@ function Weeks({ settings, repPaces }: { settings: PlanSettings; repPaces?: RepP
       </TabsList>
       {weeks.map((w) => (
         <TabsContent key={w.value} value={w.value}>
-          <WeekView week={deriveWeek(settings, w.monday)} repPaces={repPaces} />
+          <WeekView
+            week={deriveWeek(settings, w.monday)}
+            repPaces={repPaces}
+            onReshuffle={onReshuffle}
+          />
         </TabsContent>
       ))}
     </Tabs>
