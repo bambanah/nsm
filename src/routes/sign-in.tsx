@@ -32,7 +32,9 @@ function SignIn() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-4">
-      <h1 className="text-center text-2xl font-semibold">NSM Planner</h1>
+      <h1 className="text-center text-3xl font-extrabold tracking-tight">
+        NSM Planner <span className="text-primary">•</span>
+      </h1>
       <form onSubmit={submit} className="flex flex-col gap-4">
         {isSignUp && (
           <div className="flex flex-col gap-2">

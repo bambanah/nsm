@@ -8,49 +8,84 @@ const TYPE_LABELS: Record<Day['type'], string> = {
   rest: 'Rest',
 }
 
+const dayMinutes = (day: Day) =>
+  day.type === 'subT' ? day.session.minutes : day.type === 'rest' ? 0 : day.minutes
+
 export function WeekView({ week }: { week: Week }) {
+  const maxMinutes = Math.max(...week.days.map(dayMinutes))
   return (
-    <div className="flex flex-col gap-4">
-      <dl className="grid grid-cols-3 gap-4 text-sm">
-        <Stat label="Total" value={`${week.totalMinutes} min`} />
-        <Stat label="Sub-threshold work" value={`${week.subThresholdWorkMinutes} min`} />
-        <Stat label="Sub-threshold share" value={`${week.subThresholdPercent.toFixed(1)}%`} />
+    <div className="flex flex-col gap-5">
+      <dl className="grid grid-cols-3 gap-3">
+        <Stat label="Total" value={week.totalMinutes} unit="min" />
+        <Stat label="Sub-threshold work" value={week.subThresholdWorkMinutes} unit="min" />
+        <Stat label="Sub-threshold share" value={week.subThresholdPercent.toFixed(1)} unit="%" />
       </dl>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {week.days.map((day) => (
-          <DayCard key={day.weekday} day={day} />
+          <DayCard key={day.weekday} day={day} maxMinutes={maxMinutes} />
         ))}
       </div>
     </div>
   )
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, unit }: { label: string; value: number | string; unit: string }) {
   return (
-    <div>
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="text-lg font-semibold">{value}</dd>
-    </div>
+    <Card size="sm">
+      <CardContent>
+        <dt className="text-sm font-semibold text-muted-foreground">{label}</dt>
+        <dd className="text-2xl font-extrabold sm:text-3xl">
+          {value}
+          <span className="ml-1 text-base font-semibold text-muted-foreground">{unit}</span>
+        </dd>
+      </CardContent>
+    </Card>
   )
 }
 
-function DayCard({ day }: { day: Day }) {
+function DayCard({ day, maxMinutes }: { day: Day; maxMinutes: number }) {
+  const color = `var(--day-${day.type})`
+  const minutes = dayMinutes(day)
   return (
-    <Card size="sm">
+    <Card
+      size="sm"
+      className="gap-2.5 shadow-none ring-foreground/5"
+      style={{ background: `color-mix(in oklch, ${color} 14%, var(--card))` }}
+    >
       <CardHeader>
-        <CardTitle className="flex justify-between">
+        <CardTitle className="flex items-center justify-between font-extrabold">
           <span className="capitalize">{day.weekday}</span>
-          <span className="text-muted-foreground font-normal">{TYPE_LABELS[day.type]}</span>
+          <span
+            className="rounded-md px-2 py-0.5 text-xs font-bold"
+            style={{ background: `color-mix(in oklch, ${color} 28%, var(--card))` }}
+          >
+            {TYPE_LABELS[day.type]}
+          </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="text-sm">
-        {day.type === 'subT' ? (
-          <SessionDetails session={day.session} />
-        ) : day.type === 'rest' ? (
-          <p>Rest day</p>
-        ) : (
-          <p>{day.minutes} min</p>
-        )}
+      <CardContent className="flex flex-1 flex-col gap-2.5">
+        {day.type === 'subT' && <SessionDetails session={day.session} />}
+        <div className="mt-auto flex flex-col gap-1.5">
+          <p className="text-2xl font-extrabold">
+            {day.type === 'rest' ? (
+              <span className="text-muted-foreground">Rest</span>
+            ) : (
+              <>
+                {minutes}
+                <span className="ml-1 text-base font-semibold text-muted-foreground">min</span>
+              </>
+            )}
+          </p>
+          <div
+            className="h-1.5 rounded-full"
+            style={{ background: `color-mix(in oklch, ${color} 25%, var(--card))` }}
+          >
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${(minutes / maxMinutes) * 100}%`, background: color }}
+            />
+          </div>
+        </div>
       </CardContent>
     </Card>
   )
@@ -59,14 +94,14 @@ function DayCard({ day }: { day: Day }) {
 function SessionDetails({ session }: { session: Extract<Day, { type: 'subT' }>['session'] }) {
   const { reps, repMinutes, repLength } = session.repFormat
   return (
-    <div className="flex flex-col gap-1">
-      <p>Warm-up {session.warmUpMinutes} min</p>
-      <p className="font-medium">
-        {reps}×{repMinutes}min @{repLength} ({session.workMinutes}min total)
+    <div className="flex flex-col gap-0.5">
+      <p className="text-2xl font-extrabold">
+        {reps}×{repMinutes}′
+        <span className="ml-2 text-base font-semibold text-muted-foreground">@{repLength}</span>
       </p>
-      <p className="text-muted-foreground">1min rest in between</p>
-      <p>Cool-down {session.coolDownMinutes} min</p>
-      <p className="font-medium">{session.minutes} min</p>
+      <p className="text-sm text-muted-foreground">
+        {session.warmUpMinutes}′ warm-up · 1′ rests · {session.coolDownMinutes}′ cool-down
+      </p>
     </div>
   )
 }

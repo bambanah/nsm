@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
 import { ThemeMenu } from '@/components/theme-menu'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -132,11 +133,13 @@ function Home() {
   }
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-8 p-4 sm:p-8">
+    <main className="mx-auto flex max-w-5xl flex-col gap-5 p-4 sm:p-8">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">NSM Planner</h1>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-muted-foreground">{user.name}</span>
+        <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+          NSM Planner <span className="text-primary">•</span>
+        </h1>
+        <div className="flex items-center gap-3">
+          <span className="hidden text-muted-foreground sm:inline">{user.name}</span>
           <ThemeMenu />
           <Button variant="outline" size="sm" onClick={signOut}>
             Sign out
@@ -144,85 +147,89 @@ function Home() {
         </div>
       </header>
 
-      <section className="flex flex-col gap-6">
-        <h2 className="text-lg font-semibold">Plan Settings</h2>
-        <div className="flex flex-wrap gap-6">
-          <Field label="Weekly Duration" errors={errors} field="weeklyDuration">
-            <div className="flex items-center gap-2">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl font-extrabold">Plan Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-6">
+          <div className="flex flex-wrap gap-5">
+            <Field label="Weekly Duration" errors={errors} field="weeklyDuration">
+              <div className="flex items-center gap-2 text-lg font-semibold">
+                <NumberInput
+                  value={form.hours}
+                  max={10}
+                  onChange={(hours) =>
+                    update({
+                      hours,
+                      minutes: hours !== '' && form.minutes === '' ? '0' : form.minutes,
+                    })
+                  }
+                />
+                <span>h</span>
+                <NumberInput
+                  value={form.minutes}
+                  max={59}
+                  onChange={(minutes) => update({ minutes })}
+                />
+                <span>m</span>
+              </div>
+            </Field>
+            <Field label="Warm-up (min)" errors={errors} field="warmUp">
+              <NumberInput value={form.warmUp} max={99} onChange={(warmUp) => update({ warmUp })} />
+            </Field>
+            <Field label="Cool-down (min)" errors={errors} field="coolDown">
               <NumberInput
-                value={form.hours}
-                max={10}
-                onChange={(hours) =>
-                  update({
-                    hours,
-                    minutes: hours !== '' && form.minutes === '' ? '0' : form.minutes,
-                  })
-                }
+                value={form.coolDown}
+                max={99}
+                onChange={(coolDown) => update({ coolDown })}
               />
-              <span>h</span>
-              <NumberInput
-                value={form.minutes}
-                max={59}
-                onChange={(minutes) => update({ minutes })}
-              />
-              <span>m</span>
+            </Field>
+          </div>
+
+          <Field label="Day Preferences" errors={errors} field="dayPreferences">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-7">
+              {WEEKDAYS.map((weekday) => (
+                <div key={weekday} className="flex flex-col gap-1">
+                  <Label className="text-sm text-muted-foreground capitalize">
+                    {weekday.slice(0, 3)}
+                  </Label>
+                  <Select
+                    value={form.dayPreferences[weekday] ?? 'default'}
+                    onValueChange={(value: DayPreference) => {
+                      const { [weekday]: _, ...rest } = form.dayPreferences
+                      update({
+                        dayPreferences: value === 'default' ? rest : { ...rest, [weekday]: value },
+                      })
+                    }}
+                  >
+                    <SelectTrigger className="w-full font-semibold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(PREFERENCE_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
             </div>
           </Field>
-          <Field label="Warm-up (min)" errors={errors} field="warmUp">
-            <NumberInput value={form.warmUp} max={99} onChange={(warmUp) => update({ warmUp })} />
-          </Field>
-          <Field label="Cool-down (min)" errors={errors} field="coolDown">
-            <NumberInput
-              value={form.coolDown}
-              max={99}
-              onChange={(coolDown) => update({ coolDown })}
-            />
-          </Field>
-        </div>
 
-        <Field label="Day Preferences" errors={errors} field="dayPreferences">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-            {WEEKDAYS.map((weekday) => (
-              <div key={weekday} className="flex flex-col gap-1">
-                <Label className="capitalize">{weekday}</Label>
-                <Select
-                  value={form.dayPreferences[weekday] ?? 'default'}
-                  onValueChange={(value: DayPreference) => {
-                    const { [weekday]: _, ...rest } = form.dayPreferences
-                    update({
-                      dayPreferences: value === 'default' ? rest : { ...rest, [weekday]: value },
-                    })
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(PREFERENCE_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+          <div className="flex items-center gap-3">
+            <Button onClick={save} disabled={errors.length > 0 || !isDirty}>
+              Save
+            </Button>
+            <Button variant="secondary" onClick={onReshuffle}>
+              Reshuffle
+            </Button>
+            {isDirty && saved && <span className="text-muted-foreground">Unsaved changes</span>}
+            {actionError && <span className="text-destructive">{actionError}</span>}
           </div>
-        </Field>
-
-        <div className="flex items-center gap-3">
-          <Button onClick={save} disabled={errors.length > 0 || !isDirty}>
-            Save
-          </Button>
-          <Button variant="outline" onClick={onReshuffle}>
-            Reshuffle
-          </Button>
-          {isDirty && saved && (
-            <span className="text-muted-foreground text-sm">Unsaved changes</span>
-          )}
-          {actionError && <span className="text-destructive text-sm">{actionError}</span>}
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       {errors.length === 0 && <Weeks settings={settings} />}
     </main>
@@ -236,7 +243,7 @@ function Weeks({ settings }: { settings: PlanSettings }) {
     { value: 'next', label: 'Next week', monday: mondayOf(today, 1) },
   ]
   return (
-    <Tabs defaultValue="current">
+    <Tabs defaultValue="current" className="gap-5">
       <TabsList>
         {weeks.map((w) => (
           <TabsTrigger key={w.value} value={w.value}>
@@ -271,7 +278,7 @@ function Field({
       {errors
         .filter((e) => e.field === field)
         .map((e) => (
-          <p key={e.message} className="text-destructive text-sm">
+          <p key={e.message} className="text-destructive">
             {e.message}
           </p>
         ))}
@@ -290,7 +297,7 @@ function NumberInput({
 }) {
   return (
     <Input
-      className="w-20"
+      className="w-18 text-lg"
       inputMode="numeric"
       value={value}
       onChange={(e) => {
