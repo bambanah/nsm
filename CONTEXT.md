@@ -9,7 +9,7 @@ The persisted inputs from which every Week is derived: Weekly Duration, warm-up 
 _Avoid_: Template, config, profile
 
 **Weekly Duration**:
-The total running time budget for a Week, between 4 and 10 hours.
+The total running time budget for a Week, between 5 and 9 hours.
 _Avoid_: Weekly hours, volume
 
 **Day Preference**:
@@ -27,7 +27,7 @@ _Avoid_: Plan, schedule
 ## Runs
 
 **Sub-threshold Session**:
-One of the two or three interval days in a Week: warm-up, a Rep Format at its Rep Length's pace with one-minute recoveries, cool-down.
+One of the three interval days in a Week: warm-up, a Rep Format at its Rep Length's pace with a Recovery between reps, cool-down.
 _Avoid_: SubT workout, quality session, workout
 
 **Rep Format**:
@@ -38,8 +38,20 @@ _Avoid_: Interval, set
 A Rep Format's tier, named by its target race pace: 15K (short reps), HM (medium reps) or 30K (long reps).
 _Avoid_: Short, medium, long
 
+**Recovery**:
+The standing or jogging break between reps, set by Rep Length: one minute for 15K and HM reps, two minutes for 30K reps.
+_Avoid_: Rest, rest interval
+
+**Sub-threshold Work**:
+The Week's total rep minutes across its Sub-threshold Sessions, excluding warm-ups, cool-downs and recoveries.
+_Avoid_: SubT time, quality time
+
+**Sub-threshold Share**:
+Sub-threshold Work as a percentage of the Week's total running time; the planner targets 23%, easing towards 20% at the highest Weekly Durations.
+_Avoid_: Easy/sub-t split, intensity split
+
 **Long Run**:
-The single longest easy run of the Week, a quarter of the Weekly Duration within fixed bounds.
+The single longest easy run of the Week, about 1.7 times an Easy Run within fixed bounds.
 _Avoid_: Long session
 
 **Easy Run**:
