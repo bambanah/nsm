@@ -37,41 +37,37 @@ describe('deriveWeek', () => {
       'long',
     ])
     const sunday = week.days[6]
-    expect(sunday.type === 'long' && sunday.minutes).toBe(90)
+    expect(sunday.type === 'long' && sunday.minutes).toBe(75)
     const easyMinutes = week.days.flatMap((d) => (d.type === 'easy' ? [d.minutes] : []))
     expect(new Set(easyMinutes).size).toBe(1)
   })
-  it('merges short Easy Runs into Rest Days at 4h all Default', () => {
-    for (let shuffle = 0; shuffle < 50; shuffle++) {
-      const week = deriveWeek(settings({ weeklyDurationMinutes: 240, shuffle }), '2026-09-28')
-      const byType = (t: string) => week.days.filter((d) => d.type === t).map((d) => d.weekday)
-      expect(byType('subT')).toEqual(['tuesday', 'thursday'])
-      expect(byType('long')).toEqual(['sunday'])
+  it('merges short Easy Runs into a flagged Rest Day at 5h all Default with 15 min warm-up and cool-down', () => {
+    everyWeek({ weeklyDurationMinutes: 300, warmUpMinutes: 15, coolDownMinutes: 15 }, (week) => {
+      const byType = (t: string) => week.days.filter((d) => d.type === t)
+      expect(byType('subT').map((d) => d.weekday)).toEqual(['tuesday', 'thursday', 'saturday'])
+      expect(byType('long').map((d) => d.weekday)).toEqual(['sunday'])
       expect(byType('easy')).toHaveLength(2)
-      expect(byType('rest')).toHaveLength(2)
-      expect(week.days[6]).toMatchObject({ minutes: 75 })
-    }
+      expect(byType('rest')).toEqual([expect.objectContaining({ merged: true })])
+    })
   })
-  it.each([
-    [240, 2],
-    [258, 2],
-    [259, 3],
-    [600, 3],
-  ])('plans %i min with %i Sub-threshold Sessions', (minutes, count) => {
-    everyWeek({ weeklyDurationMinutes: minutes }, (week) =>
-      expect(subTDays(week)).toHaveLength(count),
+
+  it('leaves requested Rest Days unflagged', () => {
+    everyWeek({ dayPreferences: { monday: 'rest' } }, (week) =>
+      expect(week.days[0]).toEqual({ weekday: 'monday', type: 'rest' }),
     )
   })
 
-  it.each([
-    [240, 25],
-    [300, 25],
-    [301, 35],
-    [420, 35],
-  ])('caps each session at %i min to %i work minutes', (minutes, cap) => {
-    everyWeek({ weeklyDurationMinutes: minutes }, (week) => {
-      for (const d of subTDays(week)) expect(d.session.workMinutes).toBeLessThanOrEqual(cap)
-    })
+  it.each([300, 301, 420, 540])('plans %i min with 3 Sub-threshold Sessions', (minutes) => {
+    everyWeek({ weeklyDurationMinutes: minutes }, (week) => expect(subTDays(week)).toHaveLength(3))
+  })
+
+  it.each([300, 420])('caps each session at %i min to 35 work minutes', (minutes) => {
+    const work = new Set<number>()
+    everyWeek({ weeklyDurationMinutes: minutes }, (week) =>
+      subTDays(week).forEach((d) => work.add(d.session.workMinutes)),
+    )
+    expect(Math.max(...work)).toBeLessThanOrEqual(35)
+    expect(Math.max(...work)).toBeGreaterThan(25)
   })
 
   it('uses Rep Formats over 35 work minutes above 7h', () => {
@@ -83,10 +79,9 @@ describe('deriveWeek', () => {
   })
 
   it.each([
-    [240, 75],
-    [360, 90],
-    [480, 120],
-    [600, 135],
+    [300, 75],
+    [360, 75],
+    [540, 105],
   ])('makes the Long Run at %i min last %i min', (minutes, longMinutes) => {
     everyWeek({ weeklyDurationMinutes: minutes }, (week) =>
       expect(week.days.find((d) => d.type === 'long')).toMatchObject({
@@ -95,34 +90,69 @@ describe('deriveWeek', () => {
     )
   })
 
-  it('totals a Sub-threshold Session as work, 1 min between reps, warm-up and cool-down', () => {
+  it('makes the Long Run about 1.7 times an Easy Run between the bounds', () => {
+    everyWeek({ weeklyDurationMinutes: 420 }, (week) => {
+      const long = week.days.find((d) => d.type === 'long')!
+      const easy = week.days.find((d) => d.type === 'easy')!
+      if (long.type !== 'long' || easy.type !== 'easy') throw new Error('missing runs')
+      expect(long.minutes).toBeGreaterThan(75)
+      expect(long.minutes).toBeLessThan(105)
+      expect(Math.abs(long.minutes - 1.7 * easy.minutes)).toBeLessThanOrEqual(2)
+      expect(long.ratioMinutes).toBe(long.minutes)
+      expect(Math.abs(long.baseEasyRunMinutes - easy.minutes)).toBeLessThanOrEqual(1)
+    })
+  })
+
+  it('reports the 1.7 times value when the Long Run is raised to its minimum', () => {
+    everyWeek({ weeklyDurationMinutes: 300 }, (week) => {
+      const long = week.days.find((d) => d.type === 'long')!
+      if (long.type !== 'long') throw new Error('missing Long Run')
+      expect(long.ratioMinutes).toBeLessThan(75)
+      expect(long.ratioMinutes).toBe(Math.round(1.7 * long.baseEasyRunMinutes))
+    })
+  })
+
+  it('totals a Sub-threshold Session as work, Recoveries between reps by Rep Length, warm-up and cool-down', () => {
+    const recovery = { '15K': 1, HM: 1, '30K': 2 }
     everyWeek({ warmUpMinutes: 15, coolDownMinutes: 5 }, (week) => {
       for (const { session } of subTDays(week)) {
-        const { reps, repMinutes } = session.repFormat
+        const { reps, repMinutes, repLength } = session.repFormat
         expect(session.workMinutes).toBe(reps * repMinutes)
-        expect(session.minutes).toBe(reps * repMinutes + reps - 1 + 20)
+        expect(session.recoveryMinutes).toBe(recovery[repLength])
+        expect(session.minutes).toBe(reps * repMinutes + (reps - 1) * recovery[repLength] + 20)
         expect(session).toMatchObject({ warmUpMinutes: 15, coolDownMinutes: 5 })
       }
     })
   })
 
   it('summarises total minutes over non-rest days, allowing for rounding', () => {
-    everyWeek({ weeklyDurationMinutes: 240 }, (week) => {
+    everyWeek({ weeklyDurationMinutes: 300 }, (week) => {
       const minutes = week.days.map((d) =>
         d.type === 'subT' ? d.session.minutes : d.type === 'rest' ? 0 : d.minutes,
       )
       const total = minutes.reduce((a, b) => a + b)
       expect(week.totalMinutes).toBe(total)
-      expect(Math.abs(total - 240)).toBeLessThanOrEqual(2)
+      expect(Math.abs(total - 300)).toBeLessThanOrEqual(2)
     })
   })
 
-  it('keeps the sub-threshold share within 1.5 points of 23% at 6h, to one decimal', () => {
-    everyWeek({}, (week) => {
-      expect(Math.abs(week.subThresholdPercent - 23)).toBeLessThanOrEqual(1.6)
-      expect(week.subThresholdPercent.toString()).toMatch(/^\d+(\.\d)?$/)
-    })
-  })
+  it.each([
+    [300, 23],
+    [360, 23],
+    [420, 23],
+    [480, 21.5],
+    [540, 20],
+  ])(
+    'keeps the Sub-threshold Share at %i min within 1.5 points of %s%, to one decimal',
+    (minutes, target) => {
+      everyWeek({ weeklyDurationMinutes: minutes }, (week) => {
+        expect(week.subThresholdTargetPercent).toBe(target)
+        expect(Math.abs(week.subThresholdPercent - target)).toBeLessThanOrEqual(1.6)
+        expect(week.subThresholdPercent.toString()).toMatch(/^\d+(\.\d)?$/)
+      })
+    },
+  )
+
   it('derives the same Week for the same Shuffle and Monday', () => {
     const s = settings({ shuffle: 123456 })
     expect(deriveWeek(s, '2026-10-05')).toEqual(deriveWeek(s, '2026-10-05'))
@@ -161,7 +191,7 @@ describe('deriveWeek', () => {
   })
   it('never puts the Long Run on an Easy-preferred day', () => {
     const longDays = new Set<string>()
-    everyWeek({ weeklyDurationMinutes: 600, dayPreferences: { sunday: 'easy' } }, (week) => {
+    everyWeek({ weeklyDurationMinutes: 540, dayPreferences: { sunday: 'easy' } }, (week) => {
       expect(week.days[6].type).toBe('easy')
       longDays.add(week.days.find((d) => d.type === 'long')!.weekday)
     })
@@ -169,7 +199,7 @@ describe('deriveWeek', () => {
   })
 
   it('merges Default Easy Runs into Rest Days before Easy-preferred ones', () => {
-    everyWeek({ weeklyDurationMinutes: 240, dayPreferences: { friday: 'easy' } }, (week) =>
+    everyWeek({ weeklyDurationMinutes: 300, dayPreferences: { friday: 'easy' } }, (week) =>
       expect(week.days[4].type).toBe('easy'),
     )
   })
@@ -179,7 +209,7 @@ describe('deriveWeek', () => {
     let valid = 0
     for (let i = 0; i < 3000; i++) {
       const s = settings({
-        weeklyDurationMinutes: random.pick([240, 258, 259, 300, 360, 420, 480, 600]),
+        weeklyDurationMinutes: random.pick([300, 301, 360, 420, 421, 480, 540]),
         dayPreferences: Object.fromEntries(
           WEEKDAYS.map((d) => [d, random.pick(choices)]).filter(([, p]) => p !== 'default'),
         ),

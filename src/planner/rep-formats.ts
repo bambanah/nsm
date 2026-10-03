@@ -6,6 +6,8 @@ export interface RepFormat {
   repMinutes: number
 }
 
+export const RECOVERY_MINUTES: Record<RepLength, number> = { '15K': 1, HM: 1, '30K': 2 }
+
 export const workMinutes = (f: RepFormat) => f.reps * f.repMinutes
 
 const formats = (repLength: RepLength, pairs: [number, number][]) =>

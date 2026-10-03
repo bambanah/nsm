@@ -12,17 +12,17 @@ const settings = (overrides: Partial<PlanSettings> = {}): PlanSettings => ({
 })
 
 describe('validatePlanSettings', () => {
-  it('accepts valid Plan Settings', () => {
-    expect(validatePlanSettings(settings())).toEqual([])
+  it.each([300, 360, 540])('accepts a Weekly Duration of %i minutes', (weeklyDurationMinutes) => {
+    expect(validatePlanSettings(settings({ weeklyDurationMinutes }))).toEqual([])
   })
 
-  it.each([239, 601, 360.5, Number.NaN])(
+  it.each([299, 541, 360.5, Number.NaN])(
     'rejects a Weekly Duration of %s minutes',
     (weeklyDurationMinutes) => {
       expect(validatePlanSettings(settings({ weeklyDurationMinutes }))).toEqual([
         {
           field: 'weeklyDuration',
-          message: 'Weekly Duration must be between 4h 0m and 10h 0m',
+          message: 'Weekly Duration must be between 5h 0m and 9h 0m',
         },
       ])
     },
@@ -62,16 +62,21 @@ describe('validatePlanSettings', () => {
     ])
   })
 
-  it('limits SubT preferences to the Sub-threshold Sessions at that Weekly Duration', () => {
-    const dayPreferences = {
-      monday: 'subT',
-      wednesday: 'subT',
-      friday: 'subT',
-    } as const
-    expect(preferenceErrors({ weeklyDurationMinutes: 240, dayPreferences })).toEqual([
-      'This Weekly Duration has 2 Sub-threshold Sessions, so at most 2 SubT days (you have 3)',
+  it('limits SubT preferences to the three Sub-threshold Sessions', () => {
+    expect(
+      preferenceErrors({
+        weeklyDurationMinutes: 300,
+        dayPreferences: { monday: 'subT', wednesday: 'subT', friday: 'subT' },
+      }),
+    ).toEqual([])
+    expect(
+      preferenceErrors({
+        dayPreferences: { monday: 'subT', wednesday: 'subT', friday: 'subT', sunday: 'subT' },
+      }),
+    ).toEqual([
+      'Maximum 3 SubT days allowed (you have 4)',
+      'Preferred SubT days cannot be on adjacent days (Sunday and Monday count as adjacent)',
     ])
-    expect(preferenceErrors({ weeklyDurationMinutes: 259, dayPreferences })).toEqual([])
   })
 
   it.each([
