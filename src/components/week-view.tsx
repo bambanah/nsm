@@ -1,9 +1,8 @@
+import { useState } from 'react'
+import { cn } from 'cn'
 import { Explained } from '@/components/explained'
 import { Card, CardContent } from '@/components/ui/card'
 import {
-  LONG_RUN_RATIO,
-  MAX_LONG_RUN_MINUTES,
-  MIN_LONG_RUN_MINUTES,
   SHORT_EASY_RUN_MINUTES,
   type Day,
   type SubThresholdSession,
@@ -24,6 +23,8 @@ const dayOfMonth = (monday: string, offset: number) => {
 }
 
 export function WeekView({ week }: { week: Week }) {
+  const [selected, setSelected] = useState<number>()
+  const selectedDay = selected === undefined ? undefined : week.days[selected]
   return (
     <div className="flex flex-col gap-5">
       <dl className="grid grid-cols-3 gap-3">
@@ -55,9 +56,16 @@ export function WeekView({ week }: { week: Week }) {
       </dl>
       <ol className="grid gap-2 lg:grid-cols-7">
         {week.days.map((day, i) => (
-          <DayCell key={day.weekday} day={day} date={dayOfMonth(week.monday, i)} />
+          <DayCell
+            key={day.weekday}
+            day={day}
+            date={dayOfMonth(week.monday, i)}
+            selected={selected === i}
+            onSelect={() => setSelected(selected === i ? undefined : i)}
+          />
         ))}
       </ol>
+      {selectedDay && <DayBreakdown day={selectedDay} />}
     </div>
   )
 }
@@ -84,11 +92,33 @@ function Stat({
   )
 }
 
-function DayCell({ day, date }: { day: Day; date: number }) {
+function DayCell({
+  day,
+  date,
+  selected,
+  onSelect,
+}: {
+  day: Day
+  date: number
+  selected: boolean
+  onSelect: () => void
+}) {
   const color = `var(--day-${day.type})`
   return (
     <li
-      className="flex items-center gap-4 rounded-xl border-l-4 p-3 ring-1 ring-foreground/5 lg:min-h-36 lg:flex-col lg:items-stretch lg:gap-2 lg:border-t-4 lg:border-l-0"
+      tabIndex={0}
+      aria-expanded={selected}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          onSelect()
+        }
+      }}
+      className={cn(
+        'flex cursor-pointer items-center gap-4 rounded-xl border-l-4 p-3 ring-1 lg:min-h-36 lg:flex-col lg:items-stretch lg:gap-2 lg:border-t-4 lg:border-l-0',
+        selected ? 'ring-2 ring-foreground/60' : 'ring-foreground/5',
+      )}
       style={{ borderColor: color, background: `color-mix(in oklch, ${color} 10%, var(--card))` }}
     >
       <div className="flex w-10 shrink-0 flex-col items-center leading-tight lg:w-auto lg:flex-row lg:items-baseline lg:justify-between">
@@ -112,17 +142,7 @@ function DayCell({ day, date }: { day: Day; date: number }) {
       </div>
       {day.type !== 'rest' && (
         <p className="text-2xl font-extrabold lg:mt-auto">
-          {day.type === 'subT' ? (
-            <Explained section="sessions" explanation={sessionBreakdown(day.session)}>
-              {day.session.minutes}
-            </Explained>
-          ) : day.type === 'long' ? (
-            <Explained section="long-run" explanation={longRunBreakdown(day)}>
-              {day.minutes}
-            </Explained>
-          ) : (
-            day.minutes
-          )}
+          {day.type === 'subT' ? day.session.minutes : day.minutes}
           <span className="ml-1 text-sm font-semibold text-muted-foreground">min</span>
         </p>
       )}
@@ -130,36 +150,102 @@ function DayCell({ day, date }: { day: Day; date: number }) {
   )
 }
 
-function sessionBreakdown(session: SubThresholdSession) {
-  const { reps, repMinutes } = session.repFormat
-  return `${session.warmUpMinutes}′ warm-up + ${reps}×${repMinutes}′ reps + ${reps - 1}×${session.recoveryMinutes}′ Recovery + ${session.coolDownMinutes}′ cool-down = ${session.minutes} min.`
-}
-
-function longRunBreakdown(day: Extract<Day, { type: 'long' }>) {
-  if (day.minutes === day.ratioMinutes)
-    return `About ${LONG_RUN_RATIO} × a ${Math.round(day.baseEasyRunMinutes)} min Easy Run.`
-  return day.minutes === MIN_LONG_RUN_MINUTES
-    ? `${LONG_RUN_RATIO} × an Easy Run would be ${day.ratioMinutes} min, so it is raised to the ${MIN_LONG_RUN_MINUTES} min minimum.`
-    : `${LONG_RUN_RATIO} × an Easy Run would be ${day.ratioMinutes} min, so it is lowered to the ${MAX_LONG_RUN_MINUTES} min maximum.`
-}
-
 function SessionDetails({ session }: { session: SubThresholdSession }) {
   const { reps, repMinutes, repLength } = session.repFormat
   return (
     <div className="flex flex-col">
       <p className="font-bold">
-        {reps}×{repMinutes}′{' '}
-        <Explained
-          section="pacing"
-          explanation={`Run the reps at your current ${RACE_PACES[repLength]}.`}
-        >
-          @{repLength}
-        </Explained>
+        {reps}×{repMinutes}′ @{repLength}
       </p>
       <p className="truncate text-sm text-muted-foreground lg:hidden">
         {session.warmUpMinutes}′ warm-up · {session.recoveryMinutes}′ Recoveries ·{' '}
         {session.coolDownMinutes}′ cool-down
       </p>
     </div>
+  )
+}
+
+type StepKind = 'warmUp' | 'rep' | 'recovery' | 'coolDown' | 'easy'
+
+const STEP_COLORS: Record<StepKind, string> = {
+  warmUp: 'color-mix(in oklch, var(--day-easy) 55%, var(--card))',
+  rep: 'var(--day-subT)',
+  recovery: 'color-mix(in oklch, var(--day-easy) 35%, var(--card))',
+  coolDown: 'color-mix(in oklch, var(--day-easy) 55%, var(--card))',
+  easy: 'var(--day-easy)',
+}
+
+const DAY_TITLES: Record<Day['type'], string> = {
+  subT: 'Sub-threshold Session',
+  easy: 'Easy Run',
+  long: 'Long Run',
+  rest: 'Rest Day',
+}
+
+function steps(day: Day) {
+  const raw: { kind: StepKind; minutes: number; label: string }[] = []
+  if (day.type === 'subT') {
+    const { session } = day
+    const { reps, repMinutes, repLength } = session.repFormat
+    raw.push({ kind: 'warmUp', minutes: session.warmUpMinutes, label: 'Warm-up' })
+    for (let i = 1; i <= reps; i++) {
+      raw.push({ kind: 'rep', minutes: repMinutes, label: `Rep ${i} @${repLength}` })
+      if (i < reps)
+        raw.push({ kind: 'recovery', minutes: session.recoveryMinutes, label: 'Recovery' })
+    }
+    raw.push({ kind: 'coolDown', minutes: session.coolDownMinutes, label: 'Cool-down' })
+  } else if (day.type !== 'rest') {
+    raw.push({ kind: 'easy', minutes: day.minutes, label: 'Easy pace' })
+  }
+  let start = 0
+  return raw.map((step) => {
+    const withStart = { ...step, start }
+    start += step.minutes
+    return withStart
+  })
+}
+
+const clock = (minutes: number) =>
+  `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
+
+function DayBreakdown({ day }: { day: Day }) {
+  return (
+    <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+      <h2 className="mb-3 text-lg font-extrabold">
+        <span className="capitalize">{day.weekday}</span> · {DAY_TITLES[day.type]}
+        {day.type !== 'rest' && (
+          <span className="ml-2 text-muted-foreground">
+            {day.type === 'subT' ? day.session.minutes : day.minutes} min
+          </span>
+        )}
+      </h2>
+      {day.type === 'rest' ? (
+        <p className="text-muted-foreground">No run today.</p>
+      ) : (
+        <ol>
+          {steps(day).map((step) => (
+            <li
+              key={step.start}
+              className="flex items-center gap-3 border-b py-1.5 last:border-b-0"
+            >
+              <span className="w-12 text-sm text-muted-foreground tabular-nums">
+                {clock(step.start)}
+              </span>
+              <span
+                className="h-6 w-1.5 shrink-0 rounded-full"
+                style={{ background: STEP_COLORS[step.kind] }}
+              />
+              <span className={step.kind === 'rep' ? 'font-bold' : undefined}>{step.label}</span>
+              <span className="ml-auto font-semibold tabular-nums">{step.minutes}′</span>
+            </li>
+          ))}
+        </ol>
+      )}
+      {day.type === 'subT' && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          Run the reps at your current {RACE_PACES[day.session.repFormat.repLength]}.
+        </p>
+      )}
+    </section>
   )
 }

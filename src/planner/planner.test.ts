@@ -98,17 +98,6 @@ describe('deriveWeek', () => {
       expect(long.minutes).toBeGreaterThan(75)
       expect(long.minutes).toBeLessThan(105)
       expect(Math.abs(long.minutes - 1.7 * easy.minutes)).toBeLessThanOrEqual(2)
-      expect(long.ratioMinutes).toBe(long.minutes)
-      expect(Math.abs(long.baseEasyRunMinutes - easy.minutes)).toBeLessThanOrEqual(1)
-    })
-  })
-
-  it('reports the 1.7 times value when the Long Run is raised to its minimum', () => {
-    everyWeek({ weeklyDurationMinutes: 300 }, (week) => {
-      const long = week.days.find((d) => d.type === 'long')!
-      if (long.type !== 'long') throw new Error('missing Long Run')
-      expect(long.ratioMinutes).toBeLessThan(75)
-      expect(long.ratioMinutes).toBe(Math.round(1.7 * long.baseEasyRunMinutes))
     })
   })
 

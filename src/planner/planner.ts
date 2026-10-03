@@ -37,7 +37,7 @@ export interface SubThresholdSession {
 export type Day = { weekday: Weekday } & (
   | { type: 'subT'; session: SubThresholdSession }
   | { type: 'easy'; minutes: number }
-  | { type: 'long'; minutes: number; baseEasyRunMinutes: number; ratioMinutes: number }
+  | { type: 'long'; minutes: number }
   | { type: 'rest'; merged?: true }
 )
 
@@ -122,8 +122,10 @@ function planDays(
   ]
   const subTTotal = sum(sessions.map((s) => s.minutes))
   const baseEasyRunMinutes = (minutes - subTTotal) / (easyDays.length + LONG_RUN_RATIO)
-  const ratioMinutes = Math.round(LONG_RUN_RATIO * baseEasyRunMinutes)
-  const longMinutes = Math.min(Math.max(ratioMinutes, MIN_LONG_RUN_MINUTES), MAX_LONG_RUN_MINUTES)
+  const longMinutes = Math.min(
+    Math.max(Math.round(LONG_RUN_RATIO * baseEasyRunMinutes), MIN_LONG_RUN_MINUTES),
+    MAX_LONG_RUN_MINUTES,
+  )
   const easyMinutes = Math.round((minutes - subTTotal - longMinutes) / easyDays.length)
 
   const easyRuns = mergeShortEasyRuns(
@@ -133,8 +135,7 @@ function planDays(
   return WEEKDAYS.map((weekday): Day => {
     const subTIndex = subTDays.indexOf(weekday)
     if (subTIndex >= 0) return { weekday, type: 'subT', session: sessions[subTIndex] }
-    if (weekday === longDay)
-      return { weekday, type: 'long', minutes: longMinutes, baseEasyRunMinutes, ratioMinutes }
+    if (weekday === longDay) return { weekday, type: 'long', minutes: longMinutes }
     const easyRun = easyRuns.find((r) => r.weekday === weekday)
     if (easyRun) return { weekday, type: 'easy', minutes: easyRun.minutes }
     if (easyDays.includes(weekday)) return { weekday, type: 'rest', merged: true }
