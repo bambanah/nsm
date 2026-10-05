@@ -20,6 +20,9 @@ export const DAY_PREFERENCE_LIMITS = {
   subT: SUB_THRESHOLD_SESSIONS,
 } as const
 
+export const MIN_WARM_UP_COOL_DOWN_MINUTES = 5
+export const MAX_WARM_UP_COOL_DOWN_MINUTES = 20
+
 const hoursAndMinutes = (minutes: number) => `${Math.floor(minutes / 60)}h ${minutes % 60}m`
 
 const isIntegerBetween = (value: number, min: number, max: number) =>
@@ -38,15 +41,27 @@ export function validatePlanSettings(settings: PlanSettings): PlanSettingsError[
       field: 'weeklyDuration',
       message: `Weekly Duration must be between ${hoursAndMinutes(MIN_WEEKLY_DURATION_MINUTES)} and ${hoursAndMinutes(MAX_WEEKLY_DURATION_MINUTES)}`,
     })
-  if (!isIntegerBetween(settings.warmUpMinutes, 5, 20))
+  if (
+    !isIntegerBetween(
+      settings.warmUpMinutes,
+      MIN_WARM_UP_COOL_DOWN_MINUTES,
+      MAX_WARM_UP_COOL_DOWN_MINUTES,
+    )
+  )
     errors.push({
       field: 'warmUp',
-      message: 'Warm-up must be between 5 and 20 minutes',
+      message: `Warm-up must be between ${MIN_WARM_UP_COOL_DOWN_MINUTES} and ${MAX_WARM_UP_COOL_DOWN_MINUTES} minutes`,
     })
-  if (!isIntegerBetween(settings.coolDownMinutes, 5, 20))
+  if (
+    !isIntegerBetween(
+      settings.coolDownMinutes,
+      MIN_WARM_UP_COOL_DOWN_MINUTES,
+      MAX_WARM_UP_COOL_DOWN_MINUTES,
+    )
+  )
     errors.push({
       field: 'coolDown',
-      message: 'Cool-down must be between 5 and 20 minutes',
+      message: `Cool-down must be between ${MIN_WARM_UP_COOL_DOWN_MINUTES} and ${MAX_WARM_UP_COOL_DOWN_MINUTES} minutes`,
     })
   const { fiveKSeconds } = settings
   if (fiveKSeconds !== null && !(Number.isInteger(fiveKSeconds) && fiveKSeconds > 0))

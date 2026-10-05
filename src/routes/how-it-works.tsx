@@ -23,7 +23,11 @@ import {
   REP_PACE_FIXED_WIDTH_SECONDS,
   REP_PACE_WIDTH_PERCENT,
 } from '@/planner/rep-paces'
-import { DAY_PREFERENCE_LIMITS } from '@/planner/validate'
+import {
+  DAY_PREFERENCE_LIMITS,
+  MAX_WARM_UP_COOL_DOWN_MINUTES,
+  MIN_WARM_UP_COOL_DOWN_MINUTES,
+} from '@/planner/validate'
 
 export const Route = createFileRoute('/how-it-works')({
   head: () => ({ meta: [{ title: 'How this works - NSM Planner' }] }),
@@ -53,12 +57,8 @@ function HowItWorks() {
           itself, read the <ExternalLink href={NSM_GUIDE}>Norwegian Singles guide</ExternalLink>.
         </p>
         <p>
-          The rules started from the{' '}
-          <ExternalLink href="https://threshold.works/plangenerator">
-            threshold.works Plan Generator
-          </ExternalLink>
-          , adapted wherever the method's sources say otherwise. Rules marked{' '}
-          <em>planner choice</em> are not in the sources.
+          The rules follow the guide and sirpoc's posts in the original LetsRun thread. Where the
+          sources leave a number open, the planner picks one and marks it <em>planner choice</em>.
         </p>
         <p>
           <Link to="/" className="font-semibold text-primary hover:underline">
@@ -95,14 +95,16 @@ function HowItWorks() {
         <p>
           Every Week has {SUB_THRESHOLD_SESSIONS} Sub-threshold Sessions: the third is what builds
           extra load week in, week out. Each is a warm-up, reps with a Recovery between them, and a
-          cool-down:
+          cool-down. Warm-up and cool-down are set in Plan Settings, {MIN_WARM_UP_COOL_DOWN_MINUTES}{' '}
+          to {MAX_WARM_UP_COOL_DOWN_MINUTES} min each (<em>planner choice</em>).
         </p>
         <Formula>
           session = warm-up + reps × rep minutes + (reps − 1) × Recovery + cool-down
         </Formula>
         <p>
-          Recoveries follow the guide's ranges, rounded to whole minutes. They are short so the
-          effort stays steady while you do more work than a continuous tempo run would allow.
+          Recoveries are whole minutes within the guide's ranges of 60 s for short reps, 60-90 s for
+          medium and 90-120 s for long (<em>planner choice</em>). They are short so the effort stays
+          steady while you do more work than a continuous tempo run would allow.
         </p>
         <p>
           The planner picks one 30K session at random, then the 15K and HM sessions closest to half
@@ -110,7 +112,8 @@ function HowItWorks() {
           {hours(SESSION_CAP_UNTIL_MINUTES)} no session has more than {SESSION_WORK_CAP_MINUTES} rep
           minutes (<em>planner choice</em>, matching what sirpoc ran at 7h); above that the easing
           target limits growth instead. Mixing Rep Lengths is for variety: every Rep Format aims for
-          the same sub-threshold effort.
+          the same sub-threshold effort. The Rep Formats below are a <em>planner choice</em> within
+          the guide's rep durations of about 3, 6 and 10 minutes.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -149,10 +152,10 @@ function HowItWorks() {
       <Section id="days" title="Placing the days">
         <p>
           Sub-threshold Sessions never fall on consecutive days (Sunday and Monday count), so an
-          easy day follows each one (<em>planner choice</em>, in line with the guide's example
-          week). Each session is sized so that one easy day is enough to recover. With no Day
-          Preferences they go on Tuesday, Thursday and Saturday, like the guide's example week (
-          <em>planner choice</em>). Which session lands on which day changes from Week to Week.
+          easy day follows each one. Each session is sized so that one easy day is enough to
+          recover. With no Day Preferences they go on Tuesday, Thursday and Saturday, like the
+          guide's example week (<em>planner choice</em>). Which session lands on which day changes
+          from Week to Week.
         </p>
       </Section>
 
@@ -174,8 +177,8 @@ function HowItWorks() {
         <p>
           At lower Weekly Durations the {MIN_LONG_RUN_MINUTES} min minimum makes it more than{' '}
           {LONG_RUN_RATIO} × an Easy Run, and at higher ones the {MAX_LONG_RUN_MINUTES} min maximum
-          makes it less. It goes on Sunday, or Saturday if Sunday is taken (<em>planner choice</em>
-          ).
+          makes it less. It goes on Sunday, as in the guide's example week, or Saturday if Sunday is
+          taken, then any free day (<em>planner choice</em>).
         </p>
       </Section>
 
@@ -213,17 +216,20 @@ function HowItWorks() {
         <p>
           At most {DAY_PREFERENCE_LIMITS.rest} Rest, {DAY_PREFERENCE_LIMITS.easy} Easy,{' '}
           {DAY_PREFERENCE_LIMITS.long} Long and {DAY_PREFERENCE_LIMITS.subT} SubT days, and SubT
-          days cannot be next to each other.
+          days cannot be next to each other. The Rest and Easy limits are a <em>planner choice</em>;
+          the guide's six-day week has one rest day.
         </p>
       </Section>
 
       <Section id="pacing" title="Pacing">
         <p>
           A session's Rep Length names the race pace for its reps: @15K is 15K race pace, @HM
-          half-marathon race pace and @30K 30K race pace. Enter a 5K Time in Plan Settings and the
-          planner shows each Rep Pace, on the settings summary and on each Sub-threshold Session's
-          breakdown. Use a recent 5K race or time trial that reflects your current fitness, not a
-          personal best or goal time.
+          half-marathon race pace and @30K 30K race pace. The guide gives a band for each, 12-15K,
+          20K to half-marathon and 25-30K; each Rep Length is named after the slowest pace in its
+          band, in line with the guide's advice to start at the slower end (<em>planner choice</em>
+          ). Enter a 5K Time in Plan Settings and the planner shows each Rep Pace, on the settings
+          summary and on each Sub-threshold Session's breakdown. Use a recent 5K race or time trial
+          that reflects your current fitness, not a personal best or goal time.
         </p>
         <p>
           The guide says to use equivalent race paces from current fitness, and links to the{' '}

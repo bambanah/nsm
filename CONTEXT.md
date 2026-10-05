@@ -1,6 +1,6 @@
 # NSM Planner
 
-Plans a Norwegian Singles Method running week from a weekly time budget, starting from the threshold.works planning model but following the method's primary sources where they differ, and syncs it to intervals.icu.
+Plans a Norwegian Singles Method running week from a weekly time budget, following the method's sources (norwegiansingles.run and sirpoc's posts). Syncing Weeks to intervals.icu is planned but not built.
 
 ## Planning
 

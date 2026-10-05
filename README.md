@@ -1,6 +1,6 @@
 # NSM Planner
 
-Plans a Norwegian Singles Method running week from Plan Settings. See `CONTEXT.md` for the domain language and `docs/` for decisions and the planning model.
+Plans a Norwegian Singles Method running week from Plan Settings. See `CONTEXT.md` for the domain language and `docs/` for decisions and the sources behind each planner rule.
 
 ## Environment variables
 
