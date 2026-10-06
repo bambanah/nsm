@@ -60,7 +60,11 @@ export function WeekView({
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-3">
         <dl className="grid flex-1 grid-cols-3 gap-3">
-          <Stat label="Total" value={week.totalMinutes} unit="min" />
+          <Stat
+            label="Total"
+            value={`${Math.floor(week.totalMinutes / 60)}h ${week.totalMinutes % 60}m`}
+            unit={`(${week.totalMinutes} min)`}
+          />
           <Stat
             label={
               <Explained
