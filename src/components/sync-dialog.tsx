@@ -83,6 +83,7 @@ export function SyncDialog({ hasApiKey, disabled }: { hasApiKey: boolean; disabl
           <DialogTitle>Sync Week</DialogTitle>
         </DialogHeader>
         <Calendar
+          className="bg-transparent"
           numberOfMonths={2}
           weekStartsOn={1}
           defaultMonth={parseDate(currentMonday)}
