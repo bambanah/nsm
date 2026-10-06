@@ -18,6 +18,9 @@ export const RECOVERY_MINUTES: Record<RepLength, number> = { '15K': 1, HM: 1, '3
 
 export const workMinutes = (f: RepFormat) => f.reps * f.repMinutes
 
+export const repFormatLabel = ({ reps, repMinutes, repLength }: RepFormat) =>
+  `${reps}×${repMinutes}′ @${repLength}`
+
 const formats = (repLength: RepLength, pairs: [number, number][]) =>
   pairs.map(([reps, repMinutes]): RepFormat => ({ repLength, reps, repMinutes }))
 

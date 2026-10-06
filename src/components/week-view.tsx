@@ -27,7 +27,13 @@ import {
   type SubThresholdSession,
   type Weekday,
 } from '@/planner/planner'
-import { RACE_PACES, REP_FORMATS, type RepFormat, type RepLength } from '@/planner/rep-formats'
+import {
+  RACE_PACES,
+  REP_FORMATS,
+  repFormatLabel,
+  type RepFormat,
+  type RepLength,
+} from '@/planner/rep-formats'
 import { formatRepPace, type RepPaces } from '@/planner/rep-paces'
 
 export function WeekView({
@@ -89,7 +95,7 @@ export function WeekView({
         >
           <ShuffleIcon />
         </Button>
-        <SyncDialog hasApiKey={hasApiKey} disabled={syncDisabled} />
+        <SyncDialog week={week} hasApiKey={hasApiKey} disabled={syncDisabled} />
       </div>
       <ol className="grid gap-2 lg:grid-cols-7">
         {week.days.map((day, i) => (
@@ -304,9 +310,6 @@ function DayBreakdown({
     </section>
   )
 }
-
-const repFormatLabel = ({ reps, repMinutes, repLength }: RepFormat) =>
-  `${reps}×${repMinutes}′ @${repLength}`
 
 const PLANNER = 'planner'
 

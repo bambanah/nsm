@@ -6,9 +6,12 @@ import {
   type PlanSettings,
   type Week,
 } from '@/planner/planner'
+import { repFormatLabel } from '@/planner/rep-formats'
 import { formatRepPace, repPaces, type RepPaces } from '@/planner/rep-paces'
 
 export const EXTERNAL_ID_PREFIX = 'nsm-'
+export const EASY_HR_PERCENT = '60-70%'
+const EASY_HR = `${EASY_HR_PERCENT} HR`
 
 export interface Workout {
   category: 'WORKOUT'
@@ -29,7 +32,8 @@ export function workouts(week: Week, settings: PlanSettings, monday: string): Wo
         category: 'WORKOUT',
         type: 'Run',
         start_date_local: `${date}T00:00:00`,
-        name: DAY_TYPE_LABELS[day.type],
+        name:
+          day.type === 'subT' ? repFormatLabel(day.session.repFormat) : DAY_TYPE_LABELS[day.type],
         description: workoutText(day, paces),
         external_id: `${EXTERNAL_ID_PREFIX}${date}`,
       },
@@ -38,13 +42,16 @@ export function workouts(week: Week, settings: PlanSettings, monday: string): Wo
 }
 
 function workoutText(day: Exclude<Day, { type: 'rest' }>, paces?: RepPaces) {
-  if (day.type !== 'subT') return `- ${day.minutes}m`
+  if (day.type !== 'subT') return `- ${day.minutes}m ${EASY_HR}`
+
   const { session } = day
   const { reps, repMinutes, repLength } = session.repFormat
+
   const rep = `- ${repMinutes}m${paces ? ` ${formatRepPace(paces[repLength])}/km Pace` : ''}`
+
   return [
     'Warmup',
-    `- ${session.warmUpMinutes}m`,
+    `- ${session.warmUpMinutes}m ${EASY_HR} press lap`,
     '',
     `${reps - 1}x`,
     rep,
@@ -53,6 +60,6 @@ function workoutText(day: Exclude<Day, { type: 'rest' }>, paces?: RepPaces) {
     rep,
     '',
     'Cooldown',
-    `- ${session.coolDownMinutes}m`,
+    `- ${session.coolDownMinutes}m ${EASY_HR}`,
   ].join('\n')
 }

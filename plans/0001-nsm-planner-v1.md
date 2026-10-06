@@ -75,7 +75,7 @@ A website that plans a Norwegian Singles Method (NSM) running week from a weekly
 - [x] Server functions: load the current user's Plan Settings (or none), save Plan Settings (validated with the same validation as the planner), reshuffle.
 - [x] Main page: Plan Settings form with live preview, Save, Reshuffle, current/next Week view, summary, as described in Decisions/UI. Planner runs in the browser for preview from the same module.
 - [x] Multi-stage Dockerfile (Node 24, pnpm, build, copy `.output` and migrations, `CMD` runs `node migrate.js && node .output/server/index.mjs`, port 3000); short README covering env vars, local dev, and Coolify deployment (Dockerfile build pack, Postgres resource, env vars, domain).
-- [ ] Deploy to Coolify and sign in on the public URL.
+- [x] Deploy to Coolify and sign in on the public URL.
 
 ## Verification
 

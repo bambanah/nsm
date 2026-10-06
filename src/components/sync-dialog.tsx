@@ -14,7 +14,10 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { format } from 'date-fns'
 import { addDaysTo, mondayOf, parseDate, weekLabel } from '@/lib/week-dates'
+import { DAY_TYPE_LABELS, WEEKDAYS, type Week } from '@/planner/planner'
+import { repFormatLabel } from '@/planner/rep-formats'
 import { syncWeek } from '@/sync/sync.functions'
 
 const weekOf = (monday: string) => ({
@@ -34,7 +37,15 @@ const selectedWeek = (monday?: string) =>
       }
     : {}
 
-export function SyncDialog({ hasApiKey, disabled }: { hasApiKey: boolean; disabled: boolean }) {
+export function SyncDialog({
+  week,
+  hasApiKey,
+  disabled,
+}: {
+  week: Week
+  hasApiKey: boolean
+  disabled: boolean
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [monday, setMonday] = useState<string>()
@@ -98,6 +109,7 @@ export function SyncDialog({ hasApiKey, disabled }: { hasApiKey: boolean; disabl
           modifiersClassNames={{ hovered: 'bg-muted' }}
         />
         <p className="font-semibold">{monday ? weekLabel(monday) : 'Pick a week'}</p>
+        {monday && <Activities week={week} monday={monday} />}
         <div className="flex flex-col gap-2">
           <Label htmlFor="intervals-api-key">intervals.icu API key</Label>
           {showKeyField ? (
@@ -135,5 +147,28 @@ export function SyncDialog({ hasApiKey, disabled }: { hasApiKey: boolean; disabl
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function Activities({ week, monday }: { week: Week; monday: string }) {
+  return (
+    <ul className="-mt-2 text-sm">
+      {week.days.map((day) => {
+        if (day.type === 'rest') return null
+        const date = parseDate(addDaysTo(monday, WEEKDAYS.indexOf(day.weekday)))
+        return (
+          <li key={day.weekday} className="flex gap-3 border-b py-1 last:border-b-0">
+            <span className="w-20 text-muted-foreground">{format(date, 'EEE d MMM')}</span>
+            <span className="font-semibold">
+              {DAY_TYPE_LABELS[day.type]}
+              {day.type === 'subT' && ` · ${repFormatLabel(day.session.repFormat)}`}
+            </span>
+            <span className="ml-auto tabular-nums">
+              {day.type === 'subT' ? day.session.minutes : day.minutes} min
+            </span>
+          </li>
+        )
+      })}
+    </ul>
   )
 }

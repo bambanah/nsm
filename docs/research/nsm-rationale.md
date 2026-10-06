@@ -105,6 +105,12 @@ A rule is **sourced** when the guide or sirpoc states it. A **planner choice** i
 
 - Planner choice. The guide says to include them "when budgeting the full session and weekly time" but gives no length. sirpoc's ~65-minute sessions at 7h (post-130) with about 35 rep minutes and short recoveries leave roughly 20-25 minutes for warm-up and cool-down together, consistent with the defaults.
 
+### 60-70% of maximum HR for easy running
+
+- The 70% cap is sourced: "Copeland uses an average of no more than about 70% of measured maximum HR as a conservative cap, often running below it. This is a ceiling, not a goal" (https://norwegiansingles.run/section1_core_principles.html).
+- It applies to Easy Runs, Long Runs, warm-ups and cool-downs alike. Easy and long runs share an intensity: "All are the same pace roughly" (post-130), and How this works already counts warm-ups and cool-downs as easy time.
+- The 60% floor is a planner choice. The sources give only a ceiling; a range lets intervals.icu show the target without making 70% the goal.
+
 ### Day Preference limits: at most 2 Rest, 2 Easy, 1 Long and 3 SubT days
 
 - 3 SubT days and 1 Long day follow from the sourced week shape: three sessions and one long run.
@@ -141,6 +147,7 @@ The numbers and procedures the sources leave open, each labelled *planner choice
 - Long Run bounds of 75-105 minutes and the Saturday fallback.
 - An even split of Easy Runs, merging those of 25 minutes or less into Rest Days.
 - Warm-up and cool-down of 5-20 minutes.
+- A 60% floor under the 70% maximum-HR cap for easy running.
 - At most 2 Rest and 2 Easy Day Preferences.
 - The 3% / 10 s width of a Rep Pace.
 

@@ -34,7 +34,7 @@ const week = (days: Day[]): Week => ({
 })
 
 describe('workouts', () => {
-  it('creates an all-day Run workout per run day, named by type, skipping Rest Days', () => {
+  it('creates an all-day Run workout per run day, named by type or Rep Format, skipping Rest Days', () => {
     const result = workouts(
       week([
         { weekday: 'monday', type: 'easy', minutes: 45 },
@@ -57,7 +57,7 @@ describe('workouts', () => {
         category: 'WORKOUT',
         type: 'Run',
         start_date_local: '2026-10-27T00:00:00',
-        name: 'Sub-threshold',
+        name: '4×7′ @HM',
         external_id: 'nsm-2026-10-27',
       },
       {
@@ -70,7 +70,7 @@ describe('workouts', () => {
     ])
   })
 
-  it('describes Easy and Long Runs as a single duration step', () => {
+  it('describes Easy and Long Runs as a single duration step at easy heart rate', () => {
     const [easy, long] = workouts(
       week([
         { weekday: 'monday', type: 'easy', minutes: 45 },
@@ -79,8 +79,8 @@ describe('workouts', () => {
       settings(null),
       '2026-10-26',
     )
-    expect(easy.description).toBe('- 45m')
-    expect(long.description).toBe('- 90m')
+    expect(easy.description).toBe('- 45m 60-70% HR')
+    expect(long.description).toBe('- 90m 60-70% HR')
   })
 
   it('describes a Sub-threshold Session with reps at the Rep Pace and the last rep outside the repeat', () => {
@@ -88,7 +88,7 @@ describe('workouts', () => {
     expect(session.description).toBe(
       [
         'Warmup',
-        '- 15m',
+        '- 15m 60-70% HR press lap',
         '',
         '3x',
         '- 7m 4:21-4:29/km Pace',
@@ -97,7 +97,7 @@ describe('workouts', () => {
         '- 7m 4:21-4:29/km Pace',
         '',
         'Cooldown',
-        '- 10m',
+        '- 10m 60-70% HR',
       ].join('\n'),
     )
   })
@@ -105,7 +105,19 @@ describe('workouts', () => {
   it('leaves reps without a pace target when there is no 5K Time', () => {
     const [session] = workouts(week([subT]), settings(null), '2026-10-26')
     expect(session.description).toBe(
-      ['Warmup', '- 15m', '', '3x', '- 7m', '- 1m', '', '- 7m', '', 'Cooldown', '- 10m'].join('\n'),
+      [
+        'Warmup',
+        '- 15m 60-70% HR press lap',
+        '',
+        '3x',
+        '- 7m',
+        '- 1m',
+        '',
+        '- 7m',
+        '',
+        'Cooldown',
+        '- 10m 60-70% HR',
+      ].join('\n'),
     )
   })
 })

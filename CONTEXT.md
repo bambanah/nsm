@@ -67,7 +67,7 @@ The single longest easy run of the Week, about 1.7 times an Easy Run within fixe
 _Avoid_: Long session
 
 **Easy Run**:
-A run at easy pace filling the Week's remaining time.
+A run at easy effort, no more than about 70% of maximum heart rate, filling the Week's remaining time.
 
 **Rest Day**:
 A day with no run, either requested or produced when short Easy Runs are merged.

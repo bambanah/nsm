@@ -27,9 +27,13 @@ export const syncWeek = createServerFn({ method: 'POST' })
       throw new Error('Pick the current week or later')
     const apiKey = data.apiKey ?? (await findApiKey(userId))
     if (!apiKey) throw new Error('Enter your intervals.icu API key')
+
     const settings = await findPlanSettings(userId)
     if (!settings) throw new Error('Save Plan Settings first')
+
     const week = deriveWeek(settings, await findSessionChoices(userId))
+
     await replaceManagedWorkouts(apiKey, data.monday, workouts(week, settings, data.monday))
+
     if (data.apiKey) await saveApiKey(userId, data.apiKey)
   })

@@ -28,6 +28,7 @@ import {
   MAX_WARM_UP_COOL_DOWN_MINUTES,
   MIN_WARM_UP_COOL_DOWN_MINUTES,
 } from '@/planner/validate'
+import { EASY_HR_PERCENT } from '@/sync/workouts'
 
 export const Route = createFileRoute('/how-it-works')({
   head: () => ({ meta: [{ title: 'How this works - NSM Planner' }] }),
@@ -247,6 +248,12 @@ function HowItWorks() {
           <ExternalLink href={NSM_GUIDE}>Norwegian Singles guide</ExternalLink> advises starting at
           the slower end, reassessing with a race or time trial every 4-8 weeks, and checking heart
           rate and effort as you go.
+        </p>
+        <p>
+          Easy Runs, Long Runs, warm-ups and cool-downs Sync with a target of {EASY_HR_PERCENT} of
+          maximum heart rate, taken from your intervals.icu settings. The guide caps easy running at
+          about 70% of measured maximum heart rate, a ceiling rather than a goal; the 60% floor
+          gives intervals.icu a range to show (<em>planner choice</em>).
         </p>
       </Section>
 
