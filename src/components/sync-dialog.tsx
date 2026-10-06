@@ -22,6 +22,18 @@ const weekOf = (monday: string) => ({
   to: parseDate(addDaysTo(monday, 6)),
 })
 
+const selectedWeek = (monday?: string) =>
+  monday
+    ? {
+        range_start: parseDate(monday),
+        range_middle: {
+          from: parseDate(addDaysTo(monday, 1)),
+          to: parseDate(addDaysTo(monday, 5)),
+        },
+        range_end: parseDate(addDaysTo(monday, 6)),
+      }
+    : {}
+
 export function SyncDialog({ hasApiKey, disabled }: { hasApiKey: boolean; disabled: boolean }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -71,16 +83,17 @@ export function SyncDialog({ hasApiKey, disabled }: { hasApiKey: boolean; disabl
           <DialogTitle>Sync Week</DialogTitle>
         </DialogHeader>
         <Calendar
-          mode="range"
           numberOfMonths={2}
           weekStartsOn={1}
           defaultMonth={parseDate(currentMonday)}
           disabled={{ before: parseDate(currentMonday) }}
-          selected={monday ? weekOf(monday) : undefined}
           onDayClick={(day) => setMonday(mondayOf(day))}
           onDayMouseEnter={(day) => setHovered(mondayOf(day))}
           onDayMouseLeave={() => setHovered(undefined)}
-          modifiers={{ hovered: hovered && hovered >= currentMonday ? weekOf(hovered) : [] }}
+          modifiers={{
+            ...selectedWeek(monday),
+            hovered: hovered && hovered >= currentMonday ? weekOf(hovered) : [],
+          }}
           modifiersClassNames={{ hovered: 'bg-muted' }}
         />
         <p className="font-semibold">{monday ? weekLabel(monday) : 'Pick a week'}</p>
