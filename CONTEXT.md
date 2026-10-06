@@ -1,6 +1,6 @@
 # NSM Planner
 
-Plans a Norwegian Singles Method running week from a weekly time budget, following the method's sources (norwegiansingles.run and sirpoc's posts). Syncing Weeks to intervals.icu is planned but not built.
+Plans a Norwegian Singles Method running week from a weekly time budget, following the method's sources (norwegiansingles.run and sirpoc's posts). The runner Syncs the Week to a calendar week in intervals.icu on demand.
 
 ## Planning
 
@@ -17,11 +17,11 @@ A weekday's requested role: Default, Rest, Easy, Long or SubT. Default leaves th
 _Avoid_: Day type, day setting
 
 **Shuffle**:
-The value in the Plan Settings that, with a Week's Monday date, fixes every choice the planning model leaves to chance. Set at random when Plan Settings are created; reshuffling changes every Week.
+The value in the Plan Settings that fixes every choice the planning model leaves to chance. Set at random when Plan Settings are created; reshuffling gives a fresh Week.
 _Avoid_: Seed, randomise
 
 **Week**:
-A Monday-to-Sunday set of runs derived from the Plan Settings and its Monday date, so consecutive Weeks differ, with that Week's Session Choices applied. Never stored itself.
+The Monday-to-Sunday set of runs derived from the Plan Settings with the Session Choices applied. Has no date until a Sync places it on a calendar week, and is never stored itself.
 _Avoid_: Plan, schedule
 
 ## Runs
@@ -31,7 +31,7 @@ One of the three interval days in a Week: warm-up, a Rep Format at its Rep Lengt
 _Avoid_: SubT workout, quality session, workout
 
 **Session Choice**:
-The Rep Format the runner picked for a weekday's Sub-threshold Session in a specific Week, in place of the planner's pick. Deleted once that day is no longer a Sub-threshold Session or the Rep Format exceeds the per-session cap.
+The Rep Format the runner picked for a weekday's Sub-threshold Session, in place of the planner's pick. Deleted once that day is no longer a Sub-threshold Session or the Rep Format exceeds the per-session cap.
 _Avoid_: Override, edit, custom session
 
 **Rep Format**:
@@ -75,9 +75,13 @@ A day with no run, either requested or produced when short Easy Runs are merged.
 ## Sync
 
 **Sync**:
-Pushing a Week to the intervals.icu calendar, replacing that Week's Managed Workouts and leaving everything else untouched.
-_Avoid_: Export, upload, publish
+Placing the Week on a calendar week the runner picks in intervals.icu, on demand, replacing every Managed Workout in that calendar week and leaving everything else untouched.
+_Avoid_: Export, schedule, upload, publish
 
 **Managed Workout**:
 A planned workout on the intervals.icu calendar that was created by a Sync and is identified as the app's own. Manual edits to it are overwritten by the next Sync.
 _Avoid_: Event, app workout
+
+**intervals.icu Connection**:
+The runner's intervals.icu API key, which Sync pushes with. Not part of Plan Settings.
+_Avoid_: Integration, account, credentials

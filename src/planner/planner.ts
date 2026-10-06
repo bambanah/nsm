@@ -47,8 +47,14 @@ export type Day = { weekday: Weekday } & (
   | { type: 'rest'; merged?: true }
 )
 
+export const DAY_TYPE_LABELS: Record<Day['type'], string> = {
+  subT: 'Sub-threshold',
+  easy: 'Easy',
+  long: 'Long',
+  rest: 'Rest',
+}
+
 export interface Week {
-  monday: string
   days: Day[]
   totalMinutes: number
   subThresholdWorkMinutes: number
@@ -71,12 +77,8 @@ export const TAPER_FROM_MINUTES = 420
 export const TOLERANCE = 1.5
 const MAX_ATTEMPTS = 30
 
-export function deriveWeek(
-  settings: PlanSettings,
-  monday: string,
-  sessionChoices: SessionChoice[] = [],
-): Week {
-  const random = createRandom(`${settings.shuffle}:${monday}`)
+export function deriveWeek(settings: PlanSettings, sessionChoices: SessionChoice[] = []): Week {
+  const random = createRandom(String(settings.shuffle))
   const minutes = settings.weeklyDurationMinutes
   let closest: { days: Day[]; distance: number } | undefined
 
@@ -87,19 +89,18 @@ export function deriveWeek(
     if (closest && distance >= closest.distance) continue
     const days = planDays(settings, repFormats, sessionChoices, random)
     if (!days) continue
-    if (distance <= TOLERANCE) return summarise(settings, monday, days)
+    if (distance <= TOLERANCE) return summarise(settings, days)
     closest = { days, distance }
   }
-  if (closest) return summarise(settings, monday, closest.days)
+  if (closest) return summarise(settings, closest.days)
   throw new Error('Could not place the Sub-threshold Sessions on non-adjacent days')
 }
 
 export function deadSessionChoices<T extends SessionChoice>(
   settings: PlanSettings,
-  monday: string,
   sessionChoices: T[],
 ): T[] {
-  const { days } = deriveWeek(settings, monday)
+  const { days } = deriveWeek(settings)
   return sessionChoices.filter(
     (c) =>
       days.find((d) => d.weekday === c.weekday)?.type !== 'subT' ||
@@ -209,7 +210,7 @@ function toSession(repFormat: RepFormat, settings: PlanSettings): SubThresholdSe
   }
 }
 
-function summarise(settings: PlanSettings, monday: string, days: Day[]): Week {
+function summarise(settings: PlanSettings, days: Day[]): Week {
   const totalMinutes = sum(
     days.map((d) => (d.type === 'subT' ? d.session.minutes : d.type === 'rest' ? 0 : d.minutes)),
   )
@@ -217,7 +218,6 @@ function summarise(settings: PlanSettings, monday: string, days: Day[]): Week {
     days.map((d) => (d.type === 'subT' ? d.session.workMinutes : 0)),
   )
   return {
-    monday,
     days,
     totalMinutes,
     subThresholdWorkMinutes,

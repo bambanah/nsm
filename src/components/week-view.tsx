@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ShuffleIcon } from 'lucide-react'
 import { cn } from 'cn'
 import { Explained } from '@/components/explained'
+import { SyncDialog } from '@/components/sync-dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -14,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
+  DAY_TYPE_LABELS,
   deriveWeek,
   exceedsSessionCap,
   SESSION_CAP_UNTIL_MINUTES,
@@ -28,34 +30,24 @@ import {
 import { RACE_PACES, REP_FORMATS, type RepFormat, type RepLength } from '@/planner/rep-formats'
 import { formatRepPace, type RepPaces } from '@/planner/rep-paces'
 
-const TYPE_LABELS: Record<Day['type'], string> = {
-  subT: 'Sub-threshold',
-  easy: 'Easy',
-  long: 'Long',
-  rest: 'Rest',
-}
-
-const dayOfMonth = (monday: string, offset: number) => {
-  const [y, m, d] = monday.split('-').map(Number)
-  return new Date(y, m - 1, d + offset).getDate()
-}
-
 export function WeekView({
   settings,
-  monday,
   sessionChoices,
   repPaces,
+  hasApiKey,
+  syncDisabled,
   onReshuffle,
   onChooseSession,
 }: {
   settings: PlanSettings
-  monday: string
   sessionChoices: SessionChoice[]
   repPaces?: RepPaces
+  hasApiKey: boolean
+  syncDisabled: boolean
   onReshuffle: () => void
   onChooseSession: (weekday: Weekday, repFormat?: RepFormat) => void
 }) {
-  const week = deriveWeek(settings, monday, sessionChoices)
+  const week = deriveWeek(settings, sessionChoices)
   const [selected, setSelected] = useState<number>()
   const selectedDay = selected === undefined ? undefined : week.days[selected]
   return (
@@ -97,13 +89,13 @@ export function WeekView({
         >
           <ShuffleIcon />
         </Button>
+        <SyncDialog hasApiKey={hasApiKey} disabled={syncDisabled} />
       </div>
       <ol className="grid gap-2 lg:grid-cols-7">
         {week.days.map((day, i) => (
           <DayCell
             key={day.weekday}
             day={day}
-            date={dayOfMonth(week.monday, i)}
             selected={selected === i}
             onSelect={() => setSelected(selected === i ? undefined : i)}
           />
@@ -118,7 +110,6 @@ export function WeekView({
               <SessionPicker
                 day={selectedDay}
                 settings={settings}
-                monday={monday}
                 sessionChoices={sessionChoices}
                 onChoose={(repFormat) => onChooseSession(selectedDay.weekday, repFormat)}
               />
@@ -154,12 +145,10 @@ function Stat({
 
 function DayCell({
   day,
-  date,
   selected,
   onSelect,
 }: {
   day: Day
-  date: number
   selected: boolean
   onSelect: () => void
 }) {
@@ -181,10 +170,9 @@ function DayCell({
       )}
       style={{ borderColor: color, background: `color-mix(in oklch, ${color} 10%, var(--card))` }}
     >
-      <div className="flex w-10 shrink-0 flex-col items-center leading-tight lg:w-auto lg:flex-row lg:items-baseline lg:justify-between">
-        <span className="font-extrabold capitalize">{day.weekday.slice(0, 3)}</span>
-        <span className="text-sm font-semibold text-muted-foreground">{date}</span>
-      </div>
+      <span className="w-10 shrink-0 text-center font-extrabold capitalize lg:w-auto lg:text-left">
+        {day.weekday.slice(0, 3)}
+      </span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 lg:flex-none lg:gap-2">
         <span className="text-xs font-bold" style={{ color }}>
           {day.type === 'rest' && day.merged ? (
@@ -192,10 +180,10 @@ function DayCell({
               section="easy-runs"
               explanation={`Easy Runs this week would have been ${SHORT_EASY_RUN_MINUTES} min or less, so two were combined into one run and this day became a Rest Day.`}
             >
-              {TYPE_LABELS.rest}
+              {DAY_TYPE_LABELS.rest}
             </Explained>
           ) : (
-            TYPE_LABELS[day.type]
+            DAY_TYPE_LABELS[day.type]
           )}
         </span>
         {day.type === 'subT' && <SessionDetails session={day.session} />}
@@ -327,19 +315,17 @@ const CAP_REASON = `Over the ${SESSION_WORK_CAP_MINUTES} min per-session cap up 
 function SessionPicker({
   day,
   settings,
-  monday,
   sessionChoices,
   onChoose,
 }: {
   day: Extract<Day, { type: 'subT' }>
   settings: PlanSettings
-  monday: string
   sessionChoices: SessionChoice[]
   onChoose: (repFormat?: RepFormat) => void
 }) {
   const others = sessionChoices.filter((c) => c.weekday !== day.weekday)
   const shareLabel = (repFormat?: RepFormat) =>
-    deriveWeek(settings, monday, [
+    deriveWeek(settings, [
       ...others,
       ...(repFormat ? [{ weekday: day.weekday, repFormat }] : []),
     ]).subThresholdPercent.toFixed(1)

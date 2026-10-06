@@ -14,18 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { WeekView } from '@/components/week-view'
 import { authClient } from '@/auth/auth-client'
 import { getUser } from '@/auth/auth.functions'
 import { getPlanSettings, savePlanSettings } from '@/plan-settings/plan-settings.functions'
+import { getIntervalsConnection } from '@/sync/sync.functions'
 import {
   deleteSessionChoice,
   getSessionChoices,
   setSessionChoice,
 } from '@/session-choices/session-choices.functions'
-import type { WeekSessionChoice } from '@/session-choices/session-choices.server'
-import { mondayOf } from '@/lib/week-dates'
 import {
   randomShuffle,
   WEEKDAYS,
@@ -34,7 +32,7 @@ import {
   type Weekday,
 } from '@/planner/planner'
 import { REP_LENGTHS, type RepFormat } from '@/planner/rep-formats'
-import { formatDuration, formatRepPace, repPaces, type RepPaces } from '@/planner/rep-paces'
+import { formatDuration, formatRepPace, repPaces } from '@/planner/rep-paces'
 import {
   DAY_PREFERENCE_LIMITS,
   validatePlanSettings,
@@ -49,8 +47,12 @@ export const Route = createFileRoute('/')({
     return { user }
   },
   loader: async () => {
-    const [settings, sessionChoices] = await Promise.all([getPlanSettings(), getSessionChoices()])
-    return { settings, sessionChoices }
+    const [settings, sessionChoices, connection] = await Promise.all([
+      getPlanSettings(),
+      getSessionChoices(),
+      getIntervalsConnection(),
+    ])
+    return { settings, sessionChoices, hasApiKey: connection.hasApiKey }
   },
   component: Home,
 })
@@ -113,7 +115,7 @@ const PREFERENCE_LABELS: Record<DayPreference, string> = {
 }
 
 function Home() {
-  const { settings: saved, sessionChoices } = Route.useLoaderData()
+  const { settings: saved, sessionChoices, hasApiKey } = Route.useLoaderData()
   const { user } = Route.useRouteContext()
   const router = useRouter()
   const navigate = useNavigate()
@@ -153,12 +155,12 @@ function Home() {
     return () => clearTimeout(timeout)
   }, [form, saved, router])
 
-  const chooseSession = async (monday: string, weekday: Weekday, repFormat?: RepFormat) => {
+  const chooseSession = async (weekday: Weekday, repFormat?: RepFormat) => {
     setActionError(undefined)
     try {
       await (repFormat
-        ? setSessionChoice({ data: { monday, weekday, repFormat } })
-        : deleteSessionChoice({ data: { monday, weekday } }))
+        ? setSessionChoice({ data: { weekday, repFormat } })
+        : deleteSessionChoice({ data: { weekday } }))
       await router.invalidate()
     } catch (e) {
       setActionError((e as Error).message)
@@ -343,58 +345,17 @@ function Home() {
       </Card>
 
       {errors.length === 0 && (
-        <Weeks
+        <WeekView
           settings={settings}
           sessionChoices={sessionChoices}
           repPaces={paces}
+          hasApiKey={hasApiKey}
+          syncDisabled={!saved || !samePlanSettings(settings, saved)}
           onReshuffle={() => update({ shuffle: randomShuffle() })}
           onChooseSession={chooseSession}
         />
       )}
     </main>
-  )
-}
-
-function Weeks({
-  settings,
-  sessionChoices,
-  repPaces,
-  onReshuffle,
-  onChooseSession,
-}: {
-  settings: PlanSettings
-  sessionChoices: WeekSessionChoice[]
-  repPaces?: RepPaces
-  onReshuffle: () => void
-  onChooseSession: (monday: string, weekday: Weekday, repFormat?: RepFormat) => void
-}) {
-  const [today] = useState(() => new Date())
-  const weeks = [
-    { value: 'current', label: 'This week', monday: mondayOf(today) },
-    { value: 'next', label: 'Next week', monday: mondayOf(today, 1) },
-  ]
-  return (
-    <Tabs defaultValue="current" className="gap-5">
-      <TabsList>
-        {weeks.map((w) => (
-          <TabsTrigger key={w.value} value={w.value}>
-            {w.label} ({w.monday})
-          </TabsTrigger>
-        ))}
-      </TabsList>
-      {weeks.map((w) => (
-        <TabsContent key={w.value} value={w.value}>
-          <WeekView
-            settings={settings}
-            monday={w.monday}
-            sessionChoices={sessionChoices.filter((c) => c.monday === w.monday)}
-            repPaces={repPaces}
-            onReshuffle={onReshuffle}
-            onChooseSession={(weekday, repFormat) => onChooseSession(w.monday, weekday, repFormat)}
-          />
-        </TabsContent>
-      ))}
-    </Tabs>
   )
 }
 

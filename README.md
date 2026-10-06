@@ -1,6 +1,6 @@
 # NSM Planner
 
-Plans a Norwegian Singles Method running week from Plan Settings. See `CONTEXT.md` for the domain language and `docs/` for decisions and the sources behind each planner rule.
+Plans a Norwegian Singles Method running week from Plan Settings and Syncs it to a calendar week in intervals.icu on demand. See `CONTEXT.md` for the domain language and `docs/` for decisions and the sources behind each planner rule.
 
 ## Environment variables
 
@@ -9,6 +9,7 @@ Plans a Norwegian Singles Method running week from Plan Settings. See `CONTEXT.m
 | `DATABASE_URL` | Postgres connection string |
 | `BETTER_AUTH_SECRET` | Random secret for signing sessions, e.g. `openssl rand -base64 32` |
 | `BETTER_AUTH_URL` | Public base URL of the app, e.g. `http://localhost:3000` |
+| `INTERVALS_KEY_SECRET` | 32 random bytes, base64, that encrypt stored intervals.icu API keys, e.g. `openssl rand -base64 32`. Changing it makes stored keys unreadable, so runners re-enter them |
 
 ## Local development
 
@@ -16,7 +17,7 @@ Requires Node 24 and pnpm.
 
 ```sh
 docker run -d --name nsm-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=nsm -p 5434:5432 postgres:18
-cp .env.example .env   # then fill in BETTER_AUTH_SECRET
+cp .env.example .env   # then fill in BETTER_AUTH_SECRET and INTERVALS_KEY_SECRET
 pnpm install
 pnpm db:migrate
 pnpm dev

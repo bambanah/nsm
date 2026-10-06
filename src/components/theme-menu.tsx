@@ -51,8 +51,10 @@ function subscribe(onChange: () => void) {
 
 const getTheme = () => document.documentElement.dataset.theme as Theme
 
+export const useTheme = () => useSyncExternalStore<Theme>(subscribe, getTheme, () => 'system')
+
 export function ThemeMenu() {
-  const theme = useSyncExternalStore<Theme>(subscribe, getTheme, () => 'system')
+  const theme = useTheme()
 
   useEffect(() => {
     if (theme !== 'system') return

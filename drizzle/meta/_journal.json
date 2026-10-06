@@ -22,6 +22,27 @@
       "when": 1790998258124,
       "tag": "0002_nosy_black_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791261926829,
+      "tag": "0003_delete_dated_session_choices",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791261931389,
+      "tag": "0004_supreme_justice",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791262044319,
+      "tag": "0005_crazy_thunderball",
+      "breakpoints": true
     }
   ]
 }

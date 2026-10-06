@@ -154,8 +154,8 @@ function HowItWorks() {
           Sub-threshold Sessions never fall on consecutive days (Sunday and Monday count), so an
           easy day follows each one. Each session is sized so that one easy day is enough to
           recover. With no Day Preferences they go on Tuesday, Thursday and Saturday, like the
-          guide's example week (<em>planner choice</em>). Which session lands on which day changes
-          from Week to Week.
+          guide's example week (<em>planner choice</em>). Reshuffle changes which session lands on
+          which day.
         </p>
       </Section>
 
@@ -252,9 +252,9 @@ function HowItWorks() {
 
       <Section id="shuffle" title="Shuffle">
         <p>
-          Each Week is derived from your Plan Settings and its Monday date, so consecutive Weeks
-          differ in their Rep Formats and in which session falls on which day, while any one Week
-          always comes out the same. Reshuffle changes every Week.
+          The Week is derived from your Plan Settings, so it always comes out the same until you
+          change them. Reshuffle gives a fresh Week, with different Rep Formats and sessions on
+          different days; reshuffle between Syncs for variety from week to week.
         </p>
       </Section>
     </main>

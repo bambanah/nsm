@@ -11,7 +11,6 @@ import {
 } from './session-choices.server'
 
 const weekDaySchema = z.object({
-  monday: z.iso.date(),
   weekday: z.enum(WEEKDAYS),
 })
 
@@ -38,11 +37,11 @@ export const setSessionChoice = createServerFn({ method: 'POST' })
     if (!known) throw new Error('Unknown Rep Format')
     const settings = await findPlanSettings(userId)
     if (!settings) throw new Error('Save Plan Settings first')
-    if (deadSessionChoices(settings, data.monday, [data]).length > 0)
+    if (deadSessionChoices(settings, [data]).length > 0)
       throw new Error('That Rep Format does not fit this day')
     await upsertSessionChoice(userId, data)
   })
 
 export const deleteSessionChoice = createServerFn({ method: 'POST' })
   .validator(weekDaySchema)
-  .handler(async ({ data }) => deleteSessionChoices(await requireUserId(), [data]))
+  .handler(async ({ data }) => deleteSessionChoices(await requireUserId(), [data.weekday]))

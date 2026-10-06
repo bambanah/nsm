@@ -1,51 +1,44 @@
-import { and, eq, or } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { db, type Executor } from '@/db/db.server'
 import { sessionChoices } from '@/db/schema'
-import { deadSessionChoices, type PlanSettings, type SessionChoice } from '@/planner/planner'
-
-export type WeekSessionChoice = SessionChoice & { monday: string }
+import {
+  deadSessionChoices,
+  type PlanSettings,
+  type SessionChoice,
+  type Weekday,
+} from '@/planner/planner'
 
 export async function findSessionChoices(
   userId: string,
   executor: Executor = db,
-): Promise<WeekSessionChoice[]> {
+): Promise<SessionChoice[]> {
   const rows = await executor.select().from(sessionChoices).where(eq(sessionChoices.userId, userId))
-  return rows.map(({ monday, weekday, repLength, reps, repMinutes }) => ({
-    monday,
+  return rows.map(({ weekday, repLength, reps, repMinutes }) => ({
     weekday,
     repFormat: { repLength, reps, repMinutes },
   }))
 }
 
-export async function upsertSessionChoice(userId: string, choice: WeekSessionChoice) {
+export async function upsertSessionChoice(userId: string, choice: SessionChoice) {
   const values = { ...choice.repFormat, updatedAt: new Date() }
   await db
     .insert(sessionChoices)
-    .values({ userId, monday: choice.monday, weekday: choice.weekday, ...values })
+    .values({ userId, weekday: choice.weekday, ...values })
     .onConflictDoUpdate({
-      target: [sessionChoices.userId, sessionChoices.monday, sessionChoices.weekday],
+      target: [sessionChoices.userId, sessionChoices.weekday],
       set: values,
     })
 }
 
 export async function deleteSessionChoices(
   userId: string,
-  choices: Pick<WeekSessionChoice, 'monday' | 'weekday'>[],
+  weekdays: Weekday[],
   executor: Executor = db,
 ) {
-  if (choices.length === 0) return
+  if (weekdays.length === 0) return
   await executor
     .delete(sessionChoices)
-    .where(
-      and(
-        eq(sessionChoices.userId, userId),
-        or(
-          ...choices.map((c) =>
-            and(eq(sessionChoices.monday, c.monday), eq(sessionChoices.weekday, c.weekday)),
-          ),
-        ),
-      ),
-    )
+    .where(and(eq(sessionChoices.userId, userId), inArray(sessionChoices.weekday, weekdays)))
 }
 
 export async function deleteDeadSessionChoices(
@@ -53,14 +46,10 @@ export async function deleteDeadSessionChoices(
   settings: PlanSettings,
   executor: Executor = db,
 ) {
-  const choices = await findSessionChoices(userId, executor)
-  const mondays = new Set(choices.map((c) => c.monday))
-  const dead = [...mondays].flatMap((monday) =>
-    deadSessionChoices(
-      settings,
-      monday,
-      choices.filter((c) => c.monday === monday),
-    ),
+  const dead = deadSessionChoices(settings, await findSessionChoices(userId, executor))
+  await deleteSessionChoices(
+    userId,
+    dead.map((c) => c.weekday),
+    executor,
   )
-  await deleteSessionChoices(userId, dead, executor)
 }

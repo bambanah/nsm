@@ -24,12 +24,19 @@ export const sessionChoices = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    monday: text('monday').notNull(),
     weekday: text('weekday').$type<Weekday>().notNull(),
     repLength: text('rep_length').$type<RepLength>().notNull(),
     reps: integer('reps').notNull(),
     repMinutes: integer('rep_minutes').notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.monday, t.weekday] })],
+  (t) => [primaryKey({ columns: [t.userId, t.weekday] })],
 )
+
+export const intervalsConnections = pgTable('intervals_connections', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  apiKeyEncrypted: text('api_key_encrypted').notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
