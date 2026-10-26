@@ -41,7 +41,7 @@ export function Explained({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="cursor-help underline decoration-dotted decoration-from-font underline-offset-4"
+          className="cursor-help text-left underline decoration-dotted decoration-from-font underline-offset-4"
           onPointerDown={(e) => (pointerType.current = e.pointerType)}
           onPointerEnter={hover(true)}
           onPointerLeave={hover(false)}

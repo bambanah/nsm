@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronDownIcon } from 'lucide-react'
+import { ChevronDownIcon, LogOutIcon } from 'lucide-react'
 import { createFileRoute, Link, redirect, useNavigate, useRouter } from '@tanstack/react-router'
 import { Explained } from '@/components/explained'
 import { ThemeMenu } from '@/components/theme-menu'
@@ -184,16 +184,29 @@ function Home() {
         <div className="flex items-center gap-3">
           <span className="hidden text-muted-foreground sm:inline">{user.name}</span>
           <ThemeMenu />
-          <Button variant="outline" size="sm" onClick={signOut}>
-            Sign out
+          <Button variant="outline" size="sm" className="max-sm:w-10 max-sm:px-0" onClick={signOut}>
+            <LogOutIcon className="sm:hidden" />
+            <span className="max-sm:sr-only">Sign out</span>
           </Button>
         </div>
       </header>
 
+      {errors.length === 0 && (
+        <WeekView
+          settings={settings}
+          sessionChoices={sessionChoices}
+          repPaces={paces}
+          hasApiKey={hasApiKey}
+          syncDisabled={!saved || !samePlanSettings(settings, saved)}
+          onReshuffle={() => update({ shuffle: randomShuffle() })}
+          onChooseSession={chooseSession}
+        />
+      )}
+
       <Card size="sm">
         <CardContent className="flex flex-col gap-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-lg font-semibold">
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-semibold sm:text-lg">
               {form.hours || 0}h {form.minutes || 0}m · {form.warmUp}′ warm-up · {form.coolDown}′
               cool-down
               {WEEKDAYS.filter((d) => form.dayPreferences[d]).map((d) => (
@@ -205,6 +218,7 @@ function Home() {
             </p>
             <Button
               variant="outline"
+              size="sm"
               aria-expanded={expanded}
               onClick={() => setExpanded(!expanded)}
             >
@@ -213,7 +227,7 @@ function Home() {
             </Button>
           </div>
           <div className="flex flex-col gap-2 border-t pt-4">
-            <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
+            <div className="grid grid-cols-2 items-end gap-x-4 gap-y-3 sm:flex sm:flex-wrap sm:gap-x-8">
               <div className="flex flex-col gap-1">
                 <Label htmlFor="five-k-time" className={STAT_LABEL}>
                   5K Time
@@ -230,7 +244,7 @@ function Home() {
                 REP_LENGTHS.map((repLength) => (
                   <div key={repLength} className="flex flex-col gap-1">
                     <span className={STAT_LABEL}>{repLength} pace</span>
-                    <span className="text-2xl font-extrabold text-primary tabular-nums">
+                    <span className="text-xl font-extrabold text-primary tabular-nums sm:text-2xl">
                       {formatRepPace(paces[repLength])}
                       <span className="ml-0.5 text-sm font-semibold text-muted-foreground">
                         /km
@@ -343,18 +357,6 @@ function Home() {
           ))}
         </CardContent>
       </Card>
-
-      {errors.length === 0 && (
-        <WeekView
-          settings={settings}
-          sessionChoices={sessionChoices}
-          repPaces={paces}
-          hasApiKey={hasApiKey}
-          syncDisabled={!saved || !samePlanSettings(settings, saved)}
-          onReshuffle={() => update({ shuffle: randomShuffle() })}
-          onChooseSession={chooseSession}
-        />
-      )}
     </main>
   )
 }
