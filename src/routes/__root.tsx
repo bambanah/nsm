@@ -1,6 +1,7 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { Toaster } from '@/components/ui/sonner'
 
+import favicon from '../favicon.svg?url'
 import appCss from '../styles.css?url'
 
 const themeScript = `{
@@ -18,7 +19,10 @@ export const Route = createRootRoute({
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'NSM Planner' },
     ],
-    links: [{ rel: 'stylesheet', href: appCss }],
+    links: [
+      { rel: 'stylesheet', href: appCss },
+      { rel: 'icon', href: favicon, type: 'image/svg+xml' },
+    ],
   }),
   shellComponent: RootDocument,
 })
