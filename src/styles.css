@@ -100,15 +100,15 @@
   animation-duration: 250ms;
 }
 
-.theme-menu {
-  view-transition-name: theme-menu;
+.theme-toggle {
+  view-transition-name: theme-toggle;
 }
 
-/* Show the menu button live so its icon morph isn't cross-faded with the old snapshot */
-::view-transition-old(theme-menu) {
+/* Show the toggle live so its icon morph isn't cross-faded with the old snapshot */
+::view-transition-old(theme-toggle) {
   display: none;
 }
-::view-transition-new(theme-menu) {
+::view-transition-new(theme-toggle) {
   animation: none;
 }
 
@@ -124,7 +124,6 @@
   transition-timing-function: ease-out;
 }
 
-html[data-theme="system"] [data-theme-icon="system"],
 html[data-theme="light"] [data-theme-icon="light"],
 html[data-theme="dark"] [data-theme-icon="dark"] {
   opacity: 1;

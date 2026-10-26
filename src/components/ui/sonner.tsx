@@ -1,5 +1,5 @@
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
-import { useTheme } from '@/components/theme-menu'
+import { useTheme } from '@/components/theme-toggle'
 import {
   CircleCheckIcon,
   InfoIcon,
