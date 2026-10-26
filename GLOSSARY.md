@@ -1,8 +1,10 @@
 # NSM Planner
 
-Plans a Norwegian Singles Method running week from a weekly time budget, following the method's sources (norwegiansingles.run and sirpoc's posts). The runner Syncs the Week to a calendar week in intervals.icu on demand.
+Plans a Norwegian Singles Method running week from a weekly time budget, following the method's sources (norwegiansingles.run and sirpoc's posts). Weeks are Synced to intervals.icu on demand or by Scheduled Sync.
 
-## Planning
+## Language
+
+### Planning
 
 **Plan Settings**:
 The persisted inputs from which every Week is derived: Weekly Duration, warm-up and cool-down length, a Day Preference per weekday, a Shuffle, and an optional 5K Time. With Session Choices, the only planning state the app stores.
@@ -21,17 +23,17 @@ The value in the Plan Settings that fixes every choice the planning model leaves
 _Avoid_: Seed, randomise
 
 **Week**:
-The Monday-to-Sunday set of runs derived from the Plan Settings with the Session Choices applied. Has no date until a Sync places it on a calendar week, and is never stored itself.
+The Monday-to-Sunday set of runs for one calendar week, derived from the Plan Settings and that week's Monday with the Session Choices applied. Never stored itself.
 _Avoid_: Plan, schedule
 
-## Runs
+### Runs
 
 **Sub-threshold Session**:
 One of the three interval days in a Week: warm-up, a Rep Format at its Rep Length's pace with a Recovery between reps, cool-down.
 _Avoid_: SubT workout, quality session, workout
 
 **Session Choice**:
-The Rep Format the runner picked for a weekday's Sub-threshold Session, in place of the planner's pick. Deleted once that day is no longer a Sub-threshold Session or the Rep Format exceeds the per-session cap.
+The Rep Format the runner picked for a Sub-threshold Session on a given day of a given Week, in place of the planner's pick. Deleted once that day is no longer a Sub-threshold Session or the Rep Format exceeds the per-session cap.
 _Avoid_: Override, edit, custom session
 
 **Rep Format**:
@@ -72,15 +74,31 @@ A run at easy effort, no more than about 70% of maximum heart rate, filling the 
 **Rest Day**:
 A day with no run, either requested or produced when short Easy Runs are merged.
 
-## Sync
+### Sync
 
 **Sync**:
-Placing the Week on a calendar week the runner picks in intervals.icu, on demand, replacing every Managed Workout in that calendar week and leaving everything else untouched.
+Placing a Week on its calendar week in intervals.icu, replacing every Managed Workout from today on in that calendar week and leaving everything else untouched, so days already past keep what was last Synced.
 _Avoid_: Export, schedule, upload, publish
 
 **Managed Workout**:
 A planned workout on the intervals.icu calendar that was created by a Sync and is identified as the app's own. Manual edits to it are overwritten by the next Sync.
 _Avoid_: Event, app workout
+
+**Weeks Ahead**:
+How many calendar weeks after the current one the runner keeps planned; one unless the runner picks more. The current week plus the Weeks Ahead make up the Sync Window.
+_Avoid_: Horizon, lookahead
+
+**Sync Window**:
+The current calendar week and the Weeks Ahead after it, in the runner's timezone. It moves forward at 00:00 each Monday.
+_Avoid_: Range, horizon
+
+**Scheduled Sync**:
+The opt-in automatic Sync of every Week in the Sync Window that is not yet a Synced Week. It never re-Syncs a Synced Week.
+_Avoid_: Auto sync, cron, background sync
+
+**Synced Week**:
+A calendar week the app has recorded a Sync for. It is Changed when its Week, from today on, no longer matches what that Sync placed.
+_Avoid_: Last Sync, pushed week
 
 **intervals.icu Connection**:
 The runner's intervals.icu API key, which Sync pushes with. Not part of Plan Settings.
