@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const baseURL = 'http://localhost:3030'
+export const authFile = 'playwright/.auth/user.json'
 
 export default defineConfig({
   testDir: 'e2e',
@@ -9,7 +10,7 @@ export default defineConfig({
     { name: 'setup', testMatch: 'auth.setup.ts' },
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/user.json' },
+      use: { ...devices['Desktop Chrome'], storageState: authFile },
       dependencies: ['setup'],
     },
   ],
