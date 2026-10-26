@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ChevronDownIcon, LogOutIcon } from 'lucide-react'
 import { createFileRoute, Link, redirect, useNavigate, useRouter } from '@tanstack/react-router'
 import { Explained } from '@/components/explained'
-import { ThemeMenu } from '@/components/theme-menu'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -183,7 +183,7 @@ function Home() {
         </div>
         <div className="flex items-center gap-3">
           <span className="hidden text-muted-foreground sm:inline">{user.name}</span>
-          <ThemeMenu />
+          <ThemeToggle />
           <Button variant="outline" size="sm" className="max-sm:w-10 max-sm:px-0" onClick={signOut}>
             <LogOutIcon className="sm:hidden" />
             <span className="max-sm:sr-only">Sign out</span>

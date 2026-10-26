@@ -7,9 +7,9 @@ import appCss from '../styles.css?url'
 const themeScript = `{
   let t
   try { t = localStorage.getItem('theme') } catch {}
-  if (t !== 'light' && t !== 'dark') t = 'system'
+  if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   document.documentElement.dataset.theme = t
-  document.documentElement.classList.toggle('dark', t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches))
+  document.documentElement.classList.toggle('dark', t === 'dark')
 }`
 
 export const Route = createRootRoute({

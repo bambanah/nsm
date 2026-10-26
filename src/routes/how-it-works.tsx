@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import type { HowItWorksSection } from '@/components/explained'
-import { ThemeMenu } from '@/components/theme-menu'
+import { ThemeToggle } from '@/components/theme-toggle'
 import {
   LONG_RUN_RATIO,
   MAX_LONG_RUN_MINUTES,
@@ -46,7 +46,7 @@ function HowItWorks() {
         <Link to="/" className="text-2xl font-extrabold tracking-tight sm:text-3xl">
           NSM
         </Link>
-        <ThemeMenu />
+        <ThemeToggle />
       </header>
 
       <div className="flex flex-col gap-3">
