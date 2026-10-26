@@ -85,16 +85,17 @@ export function SyncDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="secondary" disabled={disabled}>
+        <Button variant="secondary" className="max-sm:flex-1" disabled={disabled}>
           Sync to intervals.icu
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-fit">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-fit">
         <DialogHeader>
           <DialogTitle>Sync Week</DialogTitle>
         </DialogHeader>
         <Calendar
-          className="bg-transparent"
+          // Below md the months stack, so show only the first
+          className="bg-transparent max-md:mx-auto max-md:[&_.rdp-month~.rdp-month]:hidden"
           numberOfMonths={2}
           weekStartsOn={1}
           defaultMonth={parseDate(currentMonday)}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { ShuffleIcon } from 'lucide-react'
 import { cn } from 'cn'
 import { Explained } from '@/components/explained'
@@ -55,15 +55,14 @@ export function WeekView({
 }) {
   const week = deriveWeek(settings, sessionChoices)
   const [selected, setSelected] = useState<number>()
-  const selectedDay = selected === undefined ? undefined : week.days[selected]
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-3">
-        <dl className="grid flex-1 grid-cols-3 gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <dl className="grid flex-1 grid-cols-3 gap-2 sm:gap-3">
           <Stat
             label="Total"
             value={`${Math.floor(week.totalMinutes / 60)}h ${week.totalMinutes % 60}m`}
-            unit={`(${week.totalMinutes} min)`}
+            unit={<span className="max-sm:hidden">({week.totalMinutes} min)</span>}
           />
           <Stat
             label={
@@ -90,43 +89,48 @@ export function WeekView({
             unit="%"
           />
         </dl>
-        <Button
-          variant="secondary"
-          size="icon"
-          aria-label="Reshuffle"
-          title="Reshuffle"
-          onClick={onReshuffle}
-        >
-          <ShuffleIcon />
-        </Button>
-        <SyncDialog week={week} hasApiKey={hasApiKey} disabled={syncDisabled} />
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
+            size="icon"
+            aria-label="Reshuffle"
+            title="Reshuffle"
+            onClick={onReshuffle}
+          >
+            <ShuffleIcon />
+          </Button>
+          <SyncDialog week={week} hasApiKey={hasApiKey} disabled={syncDisabled} />
+        </div>
       </div>
-      <ol className="grid gap-2 lg:grid-cols-7">
+      <ol className="grid grid-cols-1 gap-2 lg:grid-cols-7">
         {week.days.map((day, i) => (
-          <DayCell
-            key={day.weekday}
-            day={day}
-            selected={selected === i}
-            onSelect={() => setSelected(selected === i ? undefined : i)}
-          />
+          <Fragment key={day.weekday}>
+            <DayCell
+              day={day}
+              selected={selected === i}
+              onSelect={() => setSelected(selected === i ? undefined : i)}
+            />
+            {selected === i && (
+              <li className="lg:order-last lg:col-span-7">
+                <DayBreakdown
+                  day={day}
+                  repPaces={repPaces}
+                  sessionPicker={
+                    day.type === 'subT' && (
+                      <SessionPicker
+                        day={day}
+                        settings={settings}
+                        sessionChoices={sessionChoices}
+                        onChoose={(repFormat) => onChooseSession(day.weekday, repFormat)}
+                      />
+                    )
+                  }
+                />
+              </li>
+            )}
+          </Fragment>
         ))}
       </ol>
-      {selectedDay && (
-        <DayBreakdown
-          day={selectedDay}
-          repPaces={repPaces}
-          sessionPicker={
-            selectedDay.type === 'subT' && (
-              <SessionPicker
-                day={selectedDay}
-                settings={settings}
-                sessionChoices={sessionChoices}
-                onChoose={(repFormat) => onChooseSession(selectedDay.weekday, repFormat)}
-              />
-            )
-          }
-        />
-      )}
     </div>
   )
 }
@@ -138,15 +142,17 @@ function Stat({
 }: {
   label: React.ReactNode
   value: number | string
-  unit: string
+  unit: React.ReactNode
 }) {
   return (
     <Card size="sm">
       <CardContent>
-        <dt className="text-sm font-semibold text-muted-foreground">{label}</dt>
-        <dd className="text-2xl font-extrabold sm:text-3xl">
+        <dt className="text-xs font-semibold text-muted-foreground sm:text-sm">{label}</dt>
+        <dd className="text-xl font-extrabold sm:text-3xl">
           {value}
-          <span className="ml-1 text-base font-semibold text-muted-foreground">{unit}</span>
+          <span className="ml-1 text-sm font-semibold text-muted-foreground sm:text-base">
+            {unit}
+          </span>
         </dd>
       </CardContent>
     </Card>
@@ -238,14 +244,14 @@ const DAY_TITLES: Record<Day['type'], string> = {
 }
 
 function steps(day: Day, repPaces?: RepPaces) {
-  const raw: { kind: StepKind; minutes: number; label: string }[] = []
+  const raw: { kind: StepKind; minutes: number; label: string; pace?: string }[] = []
   if (day.type === 'subT') {
     const { session } = day
     const { reps, repMinutes, repLength } = session.repFormat
-    const pace = repPaces ? ` · ${formatRepPace(repPaces[repLength])}/km` : ''
+    const pace = repPaces && `${formatRepPace(repPaces[repLength])}/km`
     raw.push({ kind: 'warmUp', minutes: session.warmUpMinutes, label: 'Warm-up' })
     for (let i = 1; i <= reps; i++) {
-      raw.push({ kind: 'rep', minutes: repMinutes, label: `Rep ${i} @${repLength}${pace}` })
+      raw.push({ kind: 'rep', minutes: repMinutes, label: `Rep ${i} @${repLength}`, pace })
       if (i < reps)
         raw.push({ kind: 'recovery', minutes: session.recoveryMinutes, label: 'Recovery' })
     }
@@ -302,7 +308,10 @@ function DayBreakdown({
                 className="h-6 w-1.5 shrink-0 rounded-full"
                 style={{ background: STEP_COLORS[step.kind] }}
               />
-              <span className={step.kind === 'rep' ? 'font-bold' : undefined}>{step.label}</span>
+              <span className="flex flex-wrap gap-x-2">
+                <span className={step.kind === 'rep' ? 'font-bold' : undefined}>{step.label}</span>
+                {step.pace && <span className="text-muted-foreground">{step.pace}</span>}
+              </span>
               <span className="ml-auto font-semibold tabular-nums">{step.minutes}′</span>
             </li>
           ))}
