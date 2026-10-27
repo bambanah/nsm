@@ -1,0 +1,3 @@
+# One undated Week, with Session Choices per weekday
+
+Supersedes 0003. The app derives a single Week from Plan Settings and Session Choices, with no Monday date, and a Sync places it on whichever calendar week the runner picks. Session Choices are keyed by weekday, so they apply to every calendar week the Week is Synced to. Variety from week to week comes from Reshuffling between Syncs, which a Scheduled Sync does not do, so it Syncs the same Week each week until the runner Reshuffles. We rejected keeping Monday-dated Weeks and re-deriving for the picked calendar week, because what the runner sees would not be what they Sync.
