@@ -72,11 +72,19 @@ export function WeekView({
         <Stat
           label="Total"
           value={clock(week.totalMinutes)}
-          detail={
-            paces
-              ? `${week.totalMinutes} min · ≈ ${Math.round(weeklyDistanceKm(week.days, paces))} km`
-              : `${week.totalMinutes} min`
+          detail={`${week.totalMinutes} min`}
+        />
+        <Stat
+          label={
+            <Explained
+              section="pacing"
+              explanation="An estimate: easy minutes at Easy Pace and rep minutes at the middle of their Rep Pace, with Recoveries counted as no distance."
+            >
+              Distance
+            </Explained>
           }
+          value={paces ? `≈ ${Math.round(weeklyDistanceKm(week.days, paces))} km` : '—'}
+          detail={paces ? 'upper bound' : 'needs a 5K Time'}
         />
         <Stat
           label={
@@ -104,11 +112,6 @@ export function WeekView({
         >
           <ShareBar week={week} />
         </Stat>
-        <Stat
-          label="Runs"
-          value={week.days.filter((d) => d.type !== 'rest').length}
-          detail={`${week.days.filter((d) => d.type === 'subT').length} sub-threshold`}
-        />
         <div className="col-span-2 flex items-center justify-end gap-2 bg-card px-4 py-2.5 sm:col-span-1">
           <Button
             variant="secondary"
