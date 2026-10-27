@@ -71,3 +71,25 @@ test("a Guest who signs up keeps their plan as the account's plan", async ({ pag
   await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible()
   await expect(page.getByLabel('Weekly Duration hours')).toHaveValue('6')
 })
+
+test('signing out and back in shows the account plan', async ({ page }) => {
+  await planAWeek(page)
+  await page.getByRole('link', { name: 'Sign in' }).first().click()
+  await page.getByRole('button', { name: 'No account? Sign up' }).click()
+  await page.getByLabel('Name').fill('Returning Runner')
+  await page.getByLabel('Email').fill('returning@example.com')
+  await page.getByLabel('Password').fill('password123')
+  await page.getByRole('button', { name: 'Sign up' }).click()
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Sign out' }).click()
+  await page.getByRole('link', { name: 'Sign in' }).first().click()
+  await page.getByLabel('Email').fill('returning@example.com')
+  await page.getByLabel('Password').fill('password123')
+  await page.getByRole('main').getByRole('button', { name: 'Sign in' }).click()
+
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
+  await expect(page.getByLabel('Weekly Duration hours')).toHaveValue('7')
+  await expect(page.getByLabel('5K Time')).toHaveValue('19:45')
+  await expect(chosenSession(page)).toBeVisible()
+})
