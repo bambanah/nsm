@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect, useNavigate, useRouter } from '@tanstack/react-router'
 import { Wordmark } from '@/components/app-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +18,7 @@ export const Route = createFileRoute('/sign-in')({
 
 function SignIn() {
   const navigate = useNavigate()
+  const router = useRouter()
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState<string>()
 
@@ -39,6 +40,7 @@ function SignIn() {
       }
       clearGuestPlan()
     }
+    router.clearCache()
     await navigate({ to: '/' })
   }
 
