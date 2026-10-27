@@ -9,7 +9,7 @@ const chosenSession = (page: Page) =>
 
 async function planAWeek(page: Page) {
   await page.goto('/')
-  await page.getByLabel('Weekly Duration hours').fill('6')
+  await page.getByLabel('Weekly Duration hours').fill('7')
   await page.getByLabel('5K Time').fill('19:45')
   await expect(page.getByText(TOAST)).toBeVisible()
   await page.getByRole('combobox').filter({ hasText: '(planner)' }).click()
@@ -19,13 +19,23 @@ async function planAWeek(page: Page) {
 
 const guestPlan = (page: Page) => page.evaluate(() => localStorage.getItem('guestPlan'))
 
+test('a Guest starts from a 6h Week without saving it', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByLabel('Weekly Duration hours')).toHaveValue('6')
+  await expect(page.getByLabel('Weekly Duration minutes')).toHaveValue('0')
+  await expect(page.getByText('Weekly load')).toBeVisible()
+  await page.waitForTimeout(1000)
+  await expect(page.getByText(TOAST)).toHaveCount(0)
+  expect(await guestPlan(page)).toBeNull()
+})
+
 test('a Guest plans a Week that survives a reload', async ({ page }) => {
   await planAWeek(page)
   await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible()
   await expect(page.getByText(TOAST)).toHaveCount(1)
 
   await page.reload()
-  await expect(page.getByLabel('Weekly Duration hours')).toHaveValue('6')
+  await expect(page.getByLabel('Weekly Duration hours')).toHaveValue('7')
   await expect(page.getByLabel('5K Time')).toHaveValue('19:45')
   await expect(chosenSession(page)).toBeVisible()
 
@@ -54,10 +64,10 @@ test("a Guest who signs up keeps their plan as the account's plan", async ({ pag
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
   expect(await guestPlan(page)).toBeNull()
   await page.reload()
-  await expect(page.getByLabel('Weekly Duration hours')).toHaveValue('6')
+  await expect(page.getByLabel('Weekly Duration hours')).toHaveValue('7')
   await expect(chosenSession(page)).toBeVisible()
 
   await page.getByRole('button', { name: 'Sign out' }).click()
   await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible()
-  await expect(page.getByLabel('Weekly Duration hours')).toHaveValue('')
+  await expect(page.getByLabel('Weekly Duration hours')).toHaveValue('6')
 })

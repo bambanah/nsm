@@ -129,12 +129,12 @@ function Planner() {
   const sessionChoices = user
     ? loaded.sessionChoices
     : (guestPlan?.sessionChoices ?? NO_SESSION_CHOICES)
-  const [form, setForm] = useState<FormState>(() =>
+  const [initialForm] = useState<FormState>(() =>
     saved
       ? toForm(saved)
       : {
-          hours: '',
-          minutes: '',
+          hours: user ? '' : '6',
+          minutes: user ? '' : '0',
           warmUp: '10',
           coolDown: '10',
           dayPreferences: {},
@@ -142,6 +142,9 @@ function Planner() {
           fiveKTime: '',
         },
   )
+  const [form, setForm] = useState(initialForm)
+  const [initialSettings] = useState(() => toSettings(initialForm))
+  const baseline = user || saved ? saved : initialSettings
   const [actionError, setActionError] = useState<string>()
 
   const settings = toSettings(form)
@@ -166,7 +169,8 @@ function Planner() {
 
   useEffect(() => {
     const next = toSettings(form)
-    if (validatePlanSettings(next).length > 0 || (saved && samePlanSettings(next, saved))) return
+    if (validatePlanSettings(next).length > 0 || (baseline && samePlanSettings(next, baseline)))
+      return
     const timeout = setTimeout(async () => {
       setActionError(undefined)
       if (!user) {
@@ -184,16 +188,15 @@ function Planner() {
       }
     }, 600)
     return () => clearTimeout(timeout)
-  }, [form, saved, sessionChoices, user, router, saveGuest])
+  }, [form, baseline, sessionChoices, user, router, saveGuest])
 
   const chooseGuestSession = (weekday: Weekday, repFormat?: RepFormat) => {
-    if (!saved) return setActionError('Save Plan Settings first')
     const others = sessionChoices.filter((c) => c.weekday !== weekday)
-    if (!repFormat) return saveGuest({ settings: saved, sessionChoices: others })
+    if (!repFormat) return saveGuest({ settings, sessionChoices: others })
     const choice = { weekday, repFormat }
-    const error = sessionChoiceError(saved, choice)
+    const error = sessionChoiceError(settings, choice)
     if (error) return setActionError(error)
-    saveGuest({ settings: saved, sessionChoices: [...others, choice] })
+    saveGuest({ settings, sessionChoices: [...others, choice] })
   }
 
   const chooseSession = async (weekday: Weekday, repFormat?: RepFormat) => {
