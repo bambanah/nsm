@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   deadSessionChoices,
   deriveWeek,
+  sessionChoiceError,
   WEEKDAYS,
   type DayPreference,
   type PlanSettings,
@@ -274,5 +275,28 @@ describe('deriveWeek with Session Choices', () => {
     const choice = { weekday: subTDay.weekday, repFormat: threeByTwelve30K }
     expect(subTDays(deriveWeek(s, [choice]))[0].session.repFormat).toEqual(threeByTwelve30K)
     expect(deadSessionChoices(s, [choice])).toEqual([])
+  })
+})
+
+describe('sessionChoiceError', () => {
+  const s = settings({ weeklyDurationMinutes: 420 })
+  const planned = deriveWeek(s)
+  const subTDay = subTDays(planned)[0].weekday
+  const threeByTen30K: RepFormat = { repLength: '30K', reps: 3, repMinutes: 10 }
+
+  it('accepts a known Rep Format on a Sub-threshold day', () => {
+    expect(sessionChoiceError(s, { weekday: subTDay, repFormat: threeByTen30K })).toBeUndefined()
+  })
+
+  it('rejects an unknown Rep Format', () => {
+    const repFormat: RepFormat = { repLength: '30K', reps: 9, repMinutes: 10 }
+    expect(sessionChoiceError(s, { weekday: subTDay, repFormat })).toBe('Unknown Rep Format')
+  })
+
+  it('rejects a Rep Format that is dead on that day', () => {
+    const otherDay = planned.days.find((d) => d.type !== 'subT')!.weekday
+    expect(sessionChoiceError(s, { weekday: otherDay, repFormat: threeByTen30K })).toBe(
+      'That Rep Format does not fit this day',
+    )
   })
 })

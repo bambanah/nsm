@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
-import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
+import { useCallback, useEffect, useState } from 'react'
+import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
+import { toast } from 'sonner'
 import { Explained } from '@/components/explained'
 import { AppHeader } from '@/components/app-header'
 import { Input } from '@/components/ui/input'
@@ -14,6 +15,7 @@ import {
 import { WeekView } from '@/components/week-view'
 import { authClient } from '@/auth/auth-client'
 import { getUser } from '@/auth/auth.functions'
+import { loadGuestPlan, saveGuestPlan, type GuestPlan } from '@/guest/guest-plan'
 import { getPlanSettings, savePlanSettings } from '@/plan-settings/plan-settings.functions'
 import { getIntervalsConnection } from '@/sync/sync.functions'
 import {
@@ -22,10 +24,13 @@ import {
   setSessionChoice,
 } from '@/session-choices/session-choices.functions'
 import {
+  deadSessionChoices,
   randomShuffle,
+  sessionChoiceError,
   WEEKDAYS,
   type DayPreference,
   type PlanSettings,
+  type SessionChoice,
   type Weekday,
 } from '@/planner/planner'
 import { REP_LENGTHS, type RepFormat } from '@/planner/rep-formats'
@@ -38,12 +43,9 @@ import {
 
 export const Route = createFileRoute('/')({
   ssr: 'data-only',
-  beforeLoad: async () => {
-    const user = await getUser()
-    if (!user) throw redirect({ to: '/sign-in' })
-    return { user }
-  },
-  loader: async () => {
+  beforeLoad: async () => ({ user: await getUser() }),
+  loader: async ({ context: { user } }) => {
+    if (!user) return { settings: null, sessionChoices: [], hasApiKey: false }
     const [settings, sessionChoices, connection] = await Promise.all([
       getPlanSettings(),
       getSessionChoices(),
@@ -110,10 +112,23 @@ const PREFERENCE_LABELS: Record<DayPreference, string> = {
 }
 
 function Home() {
-  const { settings: saved, sessionChoices, hasApiKey } = Route.useLoaderData()
+  const { user } = Route.useRouteContext()
+  return <Planner key={user?.id ?? 'guest'} />
+}
+
+const GUEST_WARNED_KEY = 'guestWarned'
+const NO_SESSION_CHOICES: SessionChoice[] = []
+
+function Planner() {
+  const loaded = Route.useLoaderData()
   const { user } = Route.useRouteContext()
   const router = useRouter()
   const navigate = useNavigate()
+  const [guestPlan, setGuestPlan] = useState(() => (user ? null : loadGuestPlan()))
+  const saved = user ? loaded.settings : (guestPlan?.settings ?? null)
+  const sessionChoices = user
+    ? loaded.sessionChoices
+    : (guestPlan?.sessionChoices ?? NO_SESSION_CHOICES)
   const [form, setForm] = useState<FormState>(() =>
     saved
       ? toForm(saved)
@@ -134,11 +149,33 @@ function Home() {
   const paces = settings.fiveKSeconds ? derivePaces(settings.fiveKSeconds) : undefined
   const update = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }))
 
+  const saveGuest = useCallback(
+    (plan: GuestPlan) => {
+      saveGuestPlan(plan)
+      setGuestPlan(plan)
+      try {
+        if (sessionStorage.getItem(GUEST_WARNED_KEY)) return
+        sessionStorage.setItem(GUEST_WARNED_KEY, 'true')
+      } catch {}
+      toast('Saved on this device only. Sign in to plan from other devices.', {
+        action: { label: 'Sign in', onClick: () => navigate({ to: '/sign-in' }) },
+      })
+    },
+    [navigate],
+  )
+
   useEffect(() => {
     const next = toSettings(form)
     if (validatePlanSettings(next).length > 0 || (saved && samePlanSettings(next, saved))) return
     const timeout = setTimeout(async () => {
       setActionError(undefined)
+      if (!user) {
+        const dead = deadSessionChoices(next, sessionChoices)
+        return saveGuest({
+          settings: next,
+          sessionChoices: sessionChoices.filter((c) => !dead.includes(c)),
+        })
+      }
       try {
         await savePlanSettings({ data: next })
         await router.invalidate()
@@ -147,10 +184,21 @@ function Home() {
       }
     }, 600)
     return () => clearTimeout(timeout)
-  }, [form, saved, router])
+  }, [form, saved, sessionChoices, user, router, saveGuest])
+
+  const chooseGuestSession = (weekday: Weekday, repFormat?: RepFormat) => {
+    if (!saved) return setActionError('Save Plan Settings first')
+    const others = sessionChoices.filter((c) => c.weekday !== weekday)
+    if (!repFormat) return saveGuest({ settings: saved, sessionChoices: others })
+    const choice = { weekday, repFormat }
+    const error = sessionChoiceError(saved, choice)
+    if (error) return setActionError(error)
+    saveGuest({ settings: saved, sessionChoices: [...others, choice] })
+  }
 
   const chooseSession = async (weekday: Weekday, repFormat?: RepFormat) => {
     setActionError(undefined)
+    if (!user) return chooseGuestSession(weekday, repFormat)
     try {
       await (repFormat
         ? setSessionChoice({ data: { weekday, repFormat } })
@@ -163,12 +211,12 @@ function Home() {
 
   const signOut = async () => {
     await authClient.signOut()
-    await navigate({ to: '/sign-in' })
+    await router.invalidate()
   }
 
   return (
     <div className="flex min-h-dvh flex-col text-sm">
-      <AppHeader user={user} onSignOut={signOut} />
+      {user ? <AppHeader user={user} onSignOut={signOut} /> : <AppHeader showSignIn />}
       <div className="grid flex-1 grid-cols-1 md:grid-cols-[18rem_1fr]">
         <aside className="flex flex-col gap-5 bg-card p-4 max-md:order-last max-md:border-t md:border-r">
           <Section title="Plan">
@@ -294,7 +342,8 @@ function Home() {
               settings={settings}
               sessionChoices={sessionChoices}
               paces={paces}
-              hasApiKey={hasApiKey}
+              hasApiKey={loaded.hasApiKey}
+              isGuest={!user}
               syncDisabled={!saved || !samePlanSettings(settings, saved)}
               onReshuffle={() => update({ shuffle: randomShuffle() })}
               onChooseSession={chooseSession}

@@ -19,9 +19,13 @@ export async function findSessionChoices(
   }))
 }
 
-export async function upsertSessionChoice(userId: string, choice: SessionChoice) {
+export async function upsertSessionChoice(
+  userId: string,
+  choice: SessionChoice,
+  executor: Executor = db,
+) {
   const values = { ...choice.repFormat, updatedAt: new Date() }
-  await db
+  await executor
     .insert(sessionChoices)
     .values({ userId, weekday: choice.weekday, ...values })
     .onConflictDoUpdate({

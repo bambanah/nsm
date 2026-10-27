@@ -1,23 +1,14 @@
 import { createServerFn } from '@tanstack/react-start'
-import { z } from 'zod'
 import { requireUserId } from '@/auth/auth.server'
 import { db } from '@/db/db.server'
-import { DAY_PREFERENCES, WEEKDAYS } from '@/planner/planner'
+import { sessionChoiceError } from '@/planner/planner'
+import { guestPlanSchema, planSettingsSchema } from '@/planner/schemas'
 import { validatePlanSettings } from '@/planner/validate'
-import { deleteDeadSessionChoices } from '@/session-choices/session-choices.server'
+import {
+  deleteDeadSessionChoices,
+  upsertSessionChoice,
+} from '@/session-choices/session-choices.server'
 import { findPlanSettings, upsertPlanSettings } from './plan-settings.server'
-
-const planSettingsSchema = z.object({
-  weeklyDurationMinutes: z.number(),
-  warmUpMinutes: z.number(),
-  coolDownMinutes: z.number(),
-  dayPreferences: z.partialRecord(z.enum(WEEKDAYS), z.enum(DAY_PREFERENCES).exclude(['default'])),
-  shuffle: z
-    .int()
-    .min(0)
-    .max(2 ** 31 - 1),
-  fiveKSeconds: z.number().nullable(),
-})
 
 export const getPlanSettings = createServerFn({ method: 'GET' }).handler(async () =>
   findPlanSettings(await requireUserId()),
@@ -32,5 +23,19 @@ export const savePlanSettings = createServerFn({ method: 'POST' })
     await db.transaction(async (tx) => {
       await upsertPlanSettings(userId, data, tx)
       await deleteDeadSessionChoices(userId, data, tx)
+    })
+  })
+
+export const adoptGuestPlan = createServerFn({ method: 'POST' })
+  .validator(guestPlanSchema)
+  .handler(async ({ data: { settings, sessionChoices } }) => {
+    const userId = await requireUserId()
+    if (validatePlanSettings(settings).length > 0) return
+    await db.transaction(async (tx) => {
+      if (await findPlanSettings(userId, tx)) return
+      await upsertPlanSettings(userId, settings, tx)
+      for (const choice of sessionChoices) {
+        if (!sessionChoiceError(settings, choice)) await upsertSessionChoice(userId, choice, tx)
+      }
     })
   })

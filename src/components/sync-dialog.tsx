@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useRouter } from '@tanstack/react-router'
+import { Link, useRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { HoverPopover } from '@/components/hover-popover'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -41,10 +42,12 @@ export function SyncDialog({
   week,
   hasApiKey,
   disabled,
+  isGuest,
 }: {
   week: Week
   hasApiKey: boolean
   disabled: boolean
+  isGuest: boolean
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -81,6 +84,26 @@ export function SyncDialog({
       setSyncing(false)
     }
   }
+
+  if (isGuest)
+    return (
+      <HoverPopover
+        trigger={
+          <span className="max-sm:flex-1">
+            <Button variant="secondary" className="w-full" disabled>
+              Sync to intervals.icu
+            </Button>
+          </span>
+        }
+      >
+        <p>
+          <Link to="/sign-in" className="font-semibold text-primary hover:underline">
+            Sign in
+          </Link>{' '}
+          to Sync to intervals.icu
+        </p>
+      </HoverPopover>
+    )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

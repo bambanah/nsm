@@ -3,8 +3,11 @@ import { db, type Executor } from '@/db/db.server'
 import { planSettings } from '@/db/schema'
 import type { PlanSettings } from '@/planner/planner'
 
-export async function findPlanSettings(userId: string): Promise<PlanSettings | null> {
-  const [row] = await db
+export async function findPlanSettings(
+  userId: string,
+  executor: Executor = db,
+): Promise<PlanSettings | null> {
+  const [row] = await executor
     .select({
       weeklyDurationMinutes: planSettings.weeklyDurationMinutes,
       warmUpMinutes: planSettings.warmUpMinutes,

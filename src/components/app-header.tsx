@@ -18,9 +18,11 @@ export function Wordmark({ className }: { className?: string }) {
 export function AppHeader({
   user,
   onSignOut,
+  showSignIn,
 }: {
   user?: { name: string }
   onSignOut?: () => void
+  showSignIn?: boolean
 }) {
   return (
     <header className="flex h-11 items-center gap-4 bg-brand px-4 text-brand-foreground">
@@ -47,6 +49,11 @@ export function AppHeader({
       <div className="ml-auto flex items-center gap-1 text-sm">
         {user && <span className="mr-2 opacity-80 max-sm:hidden">{user.name}</span>}
         <ThemeToggle className={ON_BRAND} />
+        {showSignIn && (
+          <Button variant="ghost" size="sm" className={ON_BRAND} asChild>
+            <Link to="/sign-in">Sign in</Link>
+          </Button>
+        )}
         {onSignOut && (
           <Button
             variant="ghost"

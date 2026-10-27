@@ -1,0 +1,3 @@
+# Guests plan on their device, only signed-in runners are stored
+
+Runners can plan without signing in. A Guest's Plan Settings and Session Choices live in the browser's localStorage and never reach the database; only signed-in runners get rows. This narrows 0003's rejection of client-only choices: that rejection was about losing choices on reload and hiding them from Sync, and localStorage survives reloads while Guests cannot Sync. We rejected anonymous accounts in the database (rows for every passer-by, needing cleanup, for no feature a Guest uses) and keeping Guest state in the URL (long URLs, and every edit becomes a history entry).
