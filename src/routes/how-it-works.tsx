@@ -35,7 +35,7 @@ import {
 import { EASY_HR_PERCENT } from '@/sync/workouts'
 
 export const Route = createFileRoute('/how-it-works')({
-  head: () => ({ meta: [{ title: 'How this works - NSM Planner' }] }),
+  head: () => ({ meta: [{ title: 'NSM | How this works' }] }),
   component: HowItWorks,
 })
 

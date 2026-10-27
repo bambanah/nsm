@@ -43,6 +43,7 @@ import {
 
 export const Route = createFileRoute('/')({
   ssr: 'data-only',
+  head: () => ({ meta: [{ title: 'NSM | Planner' }] }),
   beforeLoad: async () => ({ user: await getUser() }),
   loader: async ({ context: { user } }) => {
     if (!user) return { settings: null, sessionChoices: [], hasApiKey: false }

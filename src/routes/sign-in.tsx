@@ -47,7 +47,7 @@ function SignIn() {
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-4">
       <h1 className="text-center text-3xl font-extrabold tracking-tight">
-        <Wordmark /> Planner
+        <Wordmark />
       </h1>
       <form onSubmit={submit} className="flex flex-col gap-4">
         {isSignUp && (
