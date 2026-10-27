@@ -1,6 +1,9 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { useEffect, useRef, useState } from 'react'
+import { createFileRoute, Link, useLocation } from '@tanstack/react-router'
+import { CheckIcon, LinkIcon } from 'lucide-react'
 import type { HowItWorksSection } from '@/components/explained'
 import { AppHeader } from '@/components/app-header'
+import { Button } from '@/components/ui/button'
 import {
   LONG_RUN_RATIO,
   MAX_LONG_RUN_MINUTES,
@@ -295,9 +298,50 @@ function Section({
   title: string
   children: React.ReactNode
 }) {
+  const hash = useLocation({ select: (l) => l.hash })
+  const heading = useRef<HTMLHeadingElement>(null)
+  const [copied, setCopied] = useState(false)
+  const uncopying = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => clearTimeout(uncopying.current), [])
+  useEffect(() => {
+    if (hash !== id) return
+    const flash = heading.current?.animate(
+      {
+        backgroundColor: [
+          'color-mix(in oklab, var(--primary) 20%, transparent)',
+          'color-mix(in oklab, var(--primary) 8%, transparent)',
+        ],
+      },
+      { duration: 1500, easing: 'ease-out', fill: 'forwards' },
+    )
+    return () => flash?.cancel()
+  }, [hash, id])
+
   return (
-    <section id={id} className="flex scroll-mt-4 flex-col gap-3">
-      <h2 className="text-xl font-extrabold tracking-tight">{title}</h2>
+    <section id={id} className="group/section flex scroll-mt-4 flex-col gap-3">
+      <h2
+        ref={heading}
+        className="-mx-2 flex items-center gap-1 rounded-md px-2 text-xl font-extrabold tracking-tight"
+      >
+        {title}
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="text-muted-foreground opacity-0 group-hover/section:opacity-100 focus-visible:opacity-100"
+          aria-label={`Copy link to ${title}`}
+          onClick={() =>
+            navigator.clipboard
+              .writeText(`${location.origin}${location.pathname}#${id}`)
+              .then(() => {
+                setCopied(true)
+                clearTimeout(uncopying.current)
+                uncopying.current = setTimeout(() => setCopied(false), 1500)
+              })
+          }
+        >
+          {copied ? <CheckIcon /> : <LinkIcon />}
+        </Button>
+      </h2>
       {children}
     </section>
   )
