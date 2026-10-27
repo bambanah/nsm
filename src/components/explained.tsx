@@ -56,7 +56,6 @@ export function Explained({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="text-base"
         onPointerEnter={hover(true)}
         onPointerLeave={hover(false)}
         onOpenAutoFocus={(e) => openedByHover.current && e.preventDefault()}
