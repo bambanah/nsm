@@ -267,8 +267,8 @@ function HowItWorks() {
             </ExternalLink>
             , estimated from your 5K Time as Jack Daniels' vVO2max (<em>planner choice</em>). Like
             the heart rate cap, it is a ceiling, not a goal. The guide says Copeland now prefers the
-            heart rate cap, since a pace can still lead runners to push too hard, so Synced workouts
-            keep heart rate as their only target.
+            heart rate cap, since a pace can still lead runners to push too hard, so Synced easy
+            running keeps heart rate as its only target.
           </p>
           <p>
             The Week's Weekly Distance counts its easy minutes at Easy Pace and its rep minutes at

@@ -91,7 +91,7 @@ A day with no run, either requested or produced when short Easy Runs are merged.
 ### Sync
 
 **Sync**:
-Placing the Week on a calendar week in intervals.icu, replacing every Managed Workout from today on in that calendar week and leaving everything else untouched, so days already past keep what was last Synced.
+Placing the Week on a calendar week in intervals.icu, replacing every Managed Workout in that calendar week, past days included, and leaving everything else untouched.
 _Avoid_: Export, schedule, upload, publish
 
 **Managed Workout**:
