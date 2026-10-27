@@ -255,13 +255,23 @@ function Home() {
                     })
                   }}
                 >
-                  <SelectTrigger size="sm" aria-label={weekday} className="w-24 font-semibold">
+                  <SelectTrigger size="sm" aria-label={weekday} className="w-fit font-semibold">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(PREFERENCE_LABELS).map(([value, label]) => (
                       <SelectItem key={value} value={value}>
-                        {label}
+                        <span className="inline-flex items-center gap-2">
+                          <span
+                            className="size-2 rounded-sm border"
+                            style={
+                              value === 'default'
+                                ? undefined
+                                : { background: `var(--day-${value})`, borderColor: 'transparent' }
+                            }
+                          />
+                          {label}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
