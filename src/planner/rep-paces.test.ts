@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { formatDuration, repPaces } from './rep-paces'
+import type { Day } from './planner'
+import { easyPace, formatDuration, repPaces, weeklyDistanceKm } from './rep-paces'
 
 const seconds = (time: string) => {
   const [m, s] = time.split(':').map(Number)
@@ -33,6 +34,47 @@ describe('repPaces', () => {
     expectWithinASecond(paces['15K'].fast, '3:11')
     expectWithinASecond(paces.HM.fast, '3:15')
     expectWithinASecond(paces['30K'].fast, '3:20')
+  })
+})
+
+describe('easyPace', () => {
+  it.each([
+    ['15:00', '4:31'],
+    ['20:00', '5:55'],
+    ['25:00', '7:19'],
+  ])('derives the Easy Pace from a %s 5K Time', (fiveK, expected) => {
+    expectWithinASecond(easyPace(seconds(fiveK)), expected)
+  })
+})
+
+describe('weeklyDistanceKm', () => {
+  it('counts easy minutes at Easy Pace, reps at the middle of their Rep Pace and Recoveries as no distance', () => {
+    const repFormat = { repLength: '30K', reps: 3, repMinutes: 10 } as const
+    const days: Day[] = [
+      {
+        weekday: 'tuesday',
+        type: 'subT',
+        session: {
+          repFormat,
+          warmUpMinutes: 10,
+          coolDownMinutes: 10,
+          workMinutes: 30,
+          recoveryMinutes: 2,
+          minutes: 54,
+        },
+        plannerRepFormat: repFormat,
+      },
+      { weekday: 'wednesday', type: 'easy', minutes: 40 },
+      { weekday: 'thursday', type: 'rest' },
+      { weekday: 'sunday', type: 'long', minutes: 90 },
+    ]
+    const rep = {
+      '15K': { fast: 200, slow: 210 },
+      HM: { fast: 220, slow: 230 },
+      '30K': { fast: 280, slow: 320 },
+    }
+    // 150 easy minutes at 6:00/km is 25 km; 30 rep minutes at 5:00/km is 6 km.
+    expect(weeklyDistanceKm(days, { rep, easy: 360 })).toBeCloseTo(31)
   })
 })
 

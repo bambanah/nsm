@@ -45,7 +45,7 @@ A Rep Format's tier, named by its target race pace: 15K (short reps), HM (medium
 _Avoid_: Short, medium, long
 
 **5K Time**:
-The runner's current 5K race time, from which every Rep Pace is derived.
+The runner's current 5K race time, from which every Rep Pace and the Easy Pace are derived.
 _Avoid_: PB, race time, fitness
 
 **Rep Pace**:
@@ -70,6 +70,14 @@ _Avoid_: Long session
 
 **Easy Run**:
 A run at easy effort, no more than about 70% of maximum heart rate, filling the Week's remaining time.
+
+**Easy Pace**:
+The fastest pace per km an Easy Run should go, derived from the runner's 5K Time as 65% of their maximal aerobic speed. It is a ceiling, not a goal, and applies equally to Long Runs, warm-ups and cool-downs.
+_Avoid_: Easy zone, MAS pace, recovery pace
+
+**Weekly Distance**:
+An upper-bound estimate of a Week's running distance: its easy minutes at Easy Pace plus its rep minutes at the middle of their Rep Pace, with Recoveries counted as no distance.
+_Avoid_: Mileage, volume, weekly km
 
 **Rest Day**:
 A day with no run, either requested or produced when short Easy Runs are merged.

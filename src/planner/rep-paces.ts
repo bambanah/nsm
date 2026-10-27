@@ -1,3 +1,4 @@
+import type { Day } from './planner'
 import type { RepLength } from './rep-formats'
 
 export interface RepPace {
@@ -7,14 +8,25 @@ export interface RepPace {
 
 export type RepPaces = Record<RepLength, RepPace>
 
+export interface Paces {
+  rep: RepPaces
+  easy: number
+}
+
 export const REP_PACE_WIDTH_PERCENT = 3
 export const REP_PACE_FIXED_WIDTH_FROM_SECONDS = 300
 export const REP_PACE_FIXED_WIDTH_SECONDS = 10
+export const EASY_PACE_MAS_PERCENT = 65
 
 const REP_LENGTH_METRES: Record<RepLength, number> = { '15K': 15000, HM: 21097.5, '30K': 30000 }
 
 // Daniels-Gilbert: v in m/min, t in minutes.
-const vo2 = (v: number) => -4.6 + 0.182258 * v + 0.000104 * v ** 2
+const VO2_A = 0.000104
+const VO2_B = 0.182258
+const VO2_C = -4.6
+const vo2 = (v: number) => VO2_C + VO2_B * v + VO2_A * v ** 2
+const speedAtVo2 = (target: number) =>
+  (-VO2_B + Math.sqrt(VO2_B ** 2 - 4 * VO2_A * (VO2_C - target))) / (2 * VO2_A)
 const fractionOfMax = (t: number) =>
   0.8 + 0.1894393 * Math.exp(-0.012778 * t) + 0.2989558 * Math.exp(-0.1932605 * t)
 const vdot = (metres: number, minutes: number) => vo2(metres / minutes) / fractionOfMax(minutes)
@@ -45,6 +57,30 @@ export function repPaces(fiveKSeconds: number): RepPaces {
     HM: pace(REP_LENGTH_METRES.HM),
     '30K': pace(REP_LENGTH_METRES['30K']),
   }
+}
+
+export function easyPace(fiveKSeconds: number) {
+  const mas = speedAtVo2(vdot(5000, fiveKSeconds / 60))
+  return (1000 / (mas * (EASY_PACE_MAS_PERCENT / 100))) * 60
+}
+
+export const derivePaces = (fiveKSeconds: number): Paces => ({
+  rep: repPaces(fiveKSeconds),
+  easy: easyPace(fiveKSeconds),
+})
+
+export function weeklyDistanceKm(days: Day[], { rep, easy }: Paces) {
+  const km = (minutes: number, pace: number) => (minutes * 60) / pace
+  let total = 0
+  for (const day of days) {
+    if (day.type === 'easy' || day.type === 'long') total += km(day.minutes, easy)
+    if (day.type === 'subT') {
+      const { repFormat, warmUpMinutes, coolDownMinutes, workMinutes } = day.session
+      const { fast, slow } = rep[repFormat.repLength]
+      total += km(warmUpMinutes + coolDownMinutes, easy) + km(workMinutes, (fast + slow) / 2)
+    }
+  }
+  return total
 }
 
 export function formatDuration(seconds: number) {
