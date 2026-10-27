@@ -29,7 +29,7 @@ import {
   type Weekday,
 } from '@/planner/planner'
 import { REP_LENGTHS, type RepFormat } from '@/planner/rep-formats'
-import { formatDuration, formatRepPace, repPaces } from '@/planner/rep-paces'
+import { formatDuration, formatRepPace, derivePaces } from '@/planner/rep-paces'
 import {
   DAY_PREFERENCE_LIMITS,
   validatePlanSettings,
@@ -131,7 +131,7 @@ function Home() {
 
   const settings = toSettings(form)
   const errors = validatePlanSettings(settings)
-  const paces = settings.fiveKSeconds ? repPaces(settings.fiveKSeconds) : undefined
+  const paces = settings.fiveKSeconds ? derivePaces(settings.fiveKSeconds) : undefined
   const update = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }))
 
   useEffect(() => {
@@ -228,10 +228,15 @@ function Home() {
               REP_LENGTHS.map((repLength) => (
                 <Row key={repLength} label={`${repLength} pace`}>
                   <span className="font-semibold tabular-nums">
-                    {formatRepPace(paces[repLength])}/km
+                    {formatRepPace(paces.rep[repLength])}/km
                   </span>
                 </Row>
               ))}
+            {paces && (
+              <Row label="Easy pace">
+                <span className="font-semibold tabular-nums">{formatDuration(paces.easy)}/km</span>
+              </Row>
+            )}
             <FieldErrors errors={errors} fields={['fiveKTime']} />
           </Section>
           <Section
@@ -288,7 +293,7 @@ function Home() {
             <WeekView
               settings={settings}
               sessionChoices={sessionChoices}
-              repPaces={paces}
+              paces={paces}
               hasApiKey={hasApiKey}
               syncDisabled={!saved || !samePlanSettings(settings, saved)}
               onReshuffle={() => update({ shuffle: randomShuffle() })}

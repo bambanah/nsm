@@ -131,6 +131,7 @@ A rule is **sourced** when the guide or sirpoc states it. A **planner choice** i
 
 - Easy intensity: "Copeland uses an average of no more than about 70% of measured maximum HR as a conservative cap, often running below it. This is a ceiling, not a goal. He now prefers HR to his earlier 65%-of-maximal-aerobic-speed guideline, which can still lead runners to push too hard" (section1). Look for "fairly steady HR after warming up. Slow down or walk hills as needed".
 - Easy and long runs share a pace: "All are the same pace roughly. 65% of MAS" (post-130).
+- The planner's Easy Pace is 65% of MAS, with MAS estimated as Daniels' vVO2max: the speed at which Daniels' VO2 cost of running equals the VDOT of the runner's 5K Time. threshold.works uses the same rule (0.651) and serves as a cross-check.
 - Before a half, "occasional modest extensions can help with time on your feet, but matching a slower runner's entire race duration is unnecessary" (section4).
 - Progression adds easy time alongside quality: "adding one 3-minute repetition across the whole week could be paired with about 12 extra easy minutes, distributed across existing runs" (section2).
 
@@ -150,6 +151,8 @@ The numbers and procedures the sources leave open, each labelled *planner choice
 - A 60% floor under the 70% maximum-HR cap for easy running.
 - At most 2 Rest and 2 Easy Day Preferences.
 - The 3% / 10 s width of a Rep Pace.
+- MAS estimated as Daniels' vVO2max.
+- Weekly Distance counting Recoveries as no distance and reps at the middle of their Rep Pace.
 
 ## Sources
 

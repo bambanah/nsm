@@ -33,12 +33,18 @@ import {
   type RepFormat,
   type RepLength,
 } from '@/planner/rep-formats'
-import { formatRepPace, type RepPaces } from '@/planner/rep-paces'
+import {
+  formatDuration,
+  formatRepPace,
+  weeklyDistanceKm,
+  type Paces,
+  type RepPaces,
+} from '@/planner/rep-paces'
 
 export function WeekView({
   settings,
   sessionChoices,
-  repPaces,
+  paces,
   hasApiKey,
   syncDisabled,
   onReshuffle,
@@ -46,7 +52,7 @@ export function WeekView({
 }: {
   settings: PlanSettings
   sessionChoices: SessionChoice[]
-  repPaces?: RepPaces
+  paces?: Paces
   hasApiKey: boolean
   syncDisabled: boolean
   onReshuffle: () => void
@@ -63,7 +69,15 @@ export function WeekView({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-[repeat(4,auto)_1fr]">
-        <Stat label="Total" value={clock(week.totalMinutes)} detail={`${week.totalMinutes} min`} />
+        <Stat
+          label="Total"
+          value={clock(week.totalMinutes)}
+          detail={
+            paces
+              ? `${week.totalMinutes} min · ≈ ${Math.round(weeklyDistanceKm(week.days, paces))} km`
+              : `${week.totalMinutes} min`
+          }
+        />
         <Stat
           label={
             <Explained
@@ -117,7 +131,7 @@ export function WeekView({
       </section>
       <DayBreakdown
         day={day}
-        repPaces={repPaces}
+        paces={paces}
         sessionPicker={
           day.type === 'subT' && (
             <SessionPicker
@@ -306,21 +320,27 @@ const DAY_TITLES: Record<Day['type'], string> = {
   rest: 'Rest Day',
 }
 
-function steps(day: Day, repPaces?: RepPaces) {
+function steps(day: Day, paces?: Paces) {
   const raw: { kind: StepKind; minutes: number; label: string; pace?: string }[] = []
+  const easyPace = paces && `${formatDuration(paces.easy)}/km`
   if (day.type === 'subT') {
     const { session } = day
     const { reps, repMinutes, repLength } = session.repFormat
-    const pace = repPaces && `${formatRepPace(repPaces[repLength])}/km`
-    raw.push({ kind: 'warmUp', minutes: session.warmUpMinutes, label: 'Warm-up' })
+    const pace = paces && `${formatRepPace(paces.rep[repLength])}/km`
+    raw.push({ kind: 'warmUp', minutes: session.warmUpMinutes, label: 'Warm-up', pace: easyPace })
     for (let i = 1; i <= reps; i++) {
       raw.push({ kind: 'rep', minutes: repMinutes, label: `Rep ${i} @${repLength}`, pace })
       if (i < reps)
         raw.push({ kind: 'recovery', minutes: session.recoveryMinutes, label: 'Recovery' })
     }
-    raw.push({ kind: 'coolDown', minutes: session.coolDownMinutes, label: 'Cool-down' })
+    raw.push({
+      kind: 'coolDown',
+      minutes: session.coolDownMinutes,
+      label: 'Cool-down',
+      pace: easyPace,
+    })
   } else if (day.type !== 'rest') {
-    raw.push({ kind: 'easy', minutes: day.minutes, label: 'Easy pace' })
+    raw.push({ kind: 'easy', minutes: day.minutes, label: 'Easy pace', pace: easyPace })
   }
   let start = 0
   return raw.map((step) => {
@@ -334,11 +354,11 @@ const CELL = 'px-2 py-1.5 whitespace-nowrap sm:px-4'
 
 function DayBreakdown({
   day,
-  repPaces,
+  paces,
   sessionPicker,
 }: {
   day: Day
-  repPaces?: RepPaces
+  paces?: Paces
   sessionPicker: React.ReactNode
 }) {
   return (
@@ -375,7 +395,7 @@ function DayBreakdown({
             </tr>
           </thead>
           <tbody>
-            {steps(day, repPaces).map((step) => (
+            {steps(day, paces).map((step) => (
               <tr key={step.start} className="border-b last:border-0 even:bg-muted/30">
                 <td className={cn(CELL, 'text-muted-foreground')}>{clock(step.start)}</td>
                 <td className={cn(CELL, step.kind === 'rep' && 'font-bold text-primary')}>
@@ -389,7 +409,7 @@ function DayBreakdown({
         </table>
       )}
       {day.type === 'subT' && (
-        <PaceNote repLength={day.session.repFormat.repLength} repPaces={repPaces} />
+        <PaceNote repLength={day.session.repFormat.repLength} repPaces={paces?.rep} />
       )}
     </section>
   )

@@ -18,6 +18,7 @@ import {
 } from '@/planner/planner'
 import { RACE_PACES, RECOVERY_MINUTES, REP_FORMATS, type RepLength } from '@/planner/rep-formats'
 import {
+  EASY_PACE_MAS_PERCENT,
   formatDuration,
   REP_PACE_FIXED_WIDTH_FROM_SECONDS,
   REP_PACE_FIXED_WIDTH_SECONDS,
@@ -254,6 +255,22 @@ function HowItWorks() {
             maximum heart rate, taken from your intervals.icu settings. The guide caps easy running
             at about 70% of measured maximum heart rate, a ceiling rather than a goal; the 60% floor
             gives intervals.icu a range to show (<em>planner choice</em>).
+          </p>
+          <p>
+            With a 5K Time, the planner also shows an Easy Pace for Easy Runs, Long Runs, warm-ups
+            and cool-downs. sirpoc ran them all at roughly the same pace,{' '}
+            <ExternalLink href="https://www.letsrun.com/forum/flat_read.php?thread=12130781&page=6#post-130">
+              {EASY_PACE_MAS_PERCENT}% of maximal aerobic speed
+            </ExternalLink>
+            , estimated from your 5K Time as Jack Daniels' vVO2max (<em>planner choice</em>). Like
+            the heart rate cap, it is a ceiling, not a goal. The guide says Copeland now prefers the
+            heart rate cap, since a pace can still lead runners to push too hard, so Synced workouts
+            keep heart rate as their only target.
+          </p>
+          <p>
+            The Week's Weekly Distance counts its easy minutes at Easy Pace and its rep minutes at
+            the middle of their Rep Pace, with Recoveries counted as no distance (
+            <em>planner choice</em>). Because Easy Pace is a ceiling, it is an upper-bound estimate.
           </p>
         </Section>
 
