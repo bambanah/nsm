@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { Wordmark } from '@/components/app-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -33,7 +34,7 @@ function SignIn() {
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-4">
       <h1 className="text-center text-3xl font-extrabold tracking-tight">
-        NSM Planner <span className="text-primary">•</span>
+        <Wordmark /> Planner
       </h1>
       <form onSubmit={submit} className="flex flex-col gap-4">
         {isSignUp && (

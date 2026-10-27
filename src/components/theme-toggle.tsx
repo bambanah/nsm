@@ -1,6 +1,7 @@
 import { MoonIcon, SunIcon } from 'lucide-react'
 import { useSyncExternalStore } from 'react'
 
+import { cn } from 'cn'
 import { Button } from '@/components/ui/button'
 
 type Theme = 'light' | 'dark'
@@ -40,7 +41,7 @@ const getTheme = () => document.documentElement.dataset.theme as Theme
 
 export const useTheme = () => useSyncExternalStore<Theme>(subscribe, getTheme, () => 'light')
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const theme = useTheme()
   const next = theme === 'dark' ? 'light' : 'dark'
 
@@ -53,7 +54,7 @@ export function ThemeToggle() {
     <Button
       variant="ghost"
       size="icon-sm"
-      className="theme-toggle"
+      className={cn('theme-toggle', className)}
       aria-label={`Switch to ${next} theme`}
       onClick={toggle}
     >

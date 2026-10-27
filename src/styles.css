@@ -1,7 +1,7 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/inter';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -25,6 +25,9 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-strike: var(--strike);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -32,58 +35,63 @@
 }
 
 :root {
-  /* Zinc neutrals with Catppuccin Latte accents */
-  --background: #fafafa;
-  --foreground: #18181b;
-  --card: #ffffff;
-  --card-foreground: #18181b;
-  --popover: #ffffff;
-  --popover-foreground: #18181b;
-  --primary: #8839ef; /* mauve */
+  /* Norwegian Singles Method cover: red, navy strike-through, warm neutrals */
+  --background: #f5f4f2;
+  --foreground: #1c1716;
+  --card: #fcfcfb;
+  --card-foreground: #1c1716;
+  --popover: #fcfcfb;
+  --popover-foreground: #1c1716;
+  --primary: #b2221b;
   --primary-foreground: #ffffff;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
-  --destructive: #d20f39; /* red */
-  --border: #e4e4e7;
-  --input: #d4d4d8;
-  --ring: #7287fd; /* lavender */
-  --day-subT: #8839ef; /* mauve */
-  --day-long: #1e66f5; /* blue */
-  --day-easy: #40a02b; /* green */
-  --day-rest: #9ca0b0; /* overlay0 */
+  --secondary: #ebe8e5;
+  --secondary-foreground: #1c1716;
+  --muted: #ebe8e5;
+  --muted-foreground: #6f6662;
+  --accent: #ebe8e5;
+  --accent-foreground: #1c1716;
+  --destructive: #c2410c;
+  --border: #e0dbd7;
+  --input: #d3ccc7;
+  --ring: #2a35c9;
+  --brand: #b2221b;
+  --brand-foreground: #ffffff;
+  --strike: #0b0e9c;
+  --day-subT: #b2221b;
+  --day-long: #2a35c9;
+  --day-easy: #2f8f6b;
+  --day-rest: #a8a29e;
   --radius: 0.625rem;
   color-scheme: light;
 }
 
 .dark {
   color-scheme: dark;
-  /* Zinc neutrals with Catppuccin Mocha accents */
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #18181b;
-  --card-foreground: #fafafa;
-  --popover: #18181b;
-  --popover-foreground: #fafafa;
-  --primary: #cba6f7; /* mauve */
-  --primary-foreground: #11111b; /* crust */
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #27272a;
-  --accent-foreground: #fafafa;
-  --destructive: #f38ba8; /* red */
-  --border: #27272a;
-  --input: #3f3f46;
-  --ring: #b4befe; /* lavender */
-  --day-subT: #cba6f7; /* mauve */
-  --day-long: #89b4fa; /* blue */
-  --day-easy: #a6e3a1; /* green */
-  --day-rest: #6c7086; /* overlay0 */
+  --background: #121010;
+  --foreground: #f5f1ee;
+  --card: #1a1716;
+  --card-foreground: #f5f1ee;
+  --popover: #1a1716;
+  --popover-foreground: #f5f1ee;
+  --primary: #f0554b;
+  --primary-foreground: #121010;
+  --secondary: #2a2523;
+  --secondary-foreground: #f5f1ee;
+  --muted: #2a2523;
+  --muted-foreground: #a69c97;
+  --accent: #2a2523;
+  --accent-foreground: #f5f1ee;
+  --destructive: #fb923c;
+  --border: #2e2826;
+  --input: #3d3532;
+  --ring: #7c86ff;
+  --brand: #8f1b15;
+  --brand-foreground: #ffffff;
+  --strike: #7c86ff;
+  --day-subT: #f0554b;
+  --day-long: #7c86ff;
+  --day-easy: #3fa67e;
+  --day-rest: #6b625e;
 }
 
 @layer base {
@@ -124,8 +132,8 @@
   transition-timing-function: ease-out;
 }
 
-html[data-theme="light"] [data-theme-icon="light"],
-html[data-theme="dark"] [data-theme-icon="dark"] {
+html[data-theme='light'] [data-theme-icon='light'],
+html[data-theme='dark'] [data-theme-icon='dark'] {
   opacity: 1;
   scale: 1;
   rotate: 0deg;
