@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ShuffleIcon } from 'lucide-react'
 import { cn } from 'cn'
 import { Explained } from '@/components/explained'
-import { SyncDialog } from '@/components/sync-dialog'
+import { SyncDialog, type SyncState } from '@/components/sync-dialog'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -45,7 +45,7 @@ export function WeekView({
   settings,
   sessionChoices,
   paces,
-  hasApiKey,
+  syncState,
   syncDisabled,
   isGuest,
   onReshuffle,
@@ -54,7 +54,7 @@ export function WeekView({
   settings: PlanSettings
   sessionChoices: SessionChoice[]
   paces?: Paces
-  hasApiKey: boolean
+  syncState: SyncState
   syncDisabled: boolean
   isGuest: boolean
   onReshuffle: () => void
@@ -126,7 +126,7 @@ export function WeekView({
           >
             <ShuffleIcon />
           </Button>
-          <SyncDialog week={week} hasApiKey={hasApiKey} disabled={syncDisabled} isGuest={isGuest} />
+          <SyncDialog week={week} syncState={syncState} disabled={syncDisabled} isGuest={isGuest} />
         </div>
       </div>
       <section className="rounded-lg border bg-card p-4">

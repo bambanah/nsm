@@ -43,6 +43,13 @@
       "when": 1791262044319,
       "tag": "0005_crazy_thunderball",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793078228680,
+      "tag": "0006_real_harrier",
+      "breakpoints": true
     }
   ]
 }

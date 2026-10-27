@@ -98,21 +98,17 @@ _Avoid_: Export, schedule, upload, publish
 A planned workout on the intervals.icu calendar that was created by a Sync and is identified as the app's own. Manual edits to it are overwritten by the next Sync.
 _Avoid_: Event, app workout
 
-**Weeks Ahead**:
-How many calendar weeks after the current one the runner keeps planned; one unless the runner picks more. The current week plus the Weeks Ahead make up the Sync Window.
-_Avoid_: Horizon, lookahead
-
-**Sync Window**:
-The current calendar week and the Weeks Ahead after it, in the runner's timezone. It moves forward at 00:00 each Monday.
-_Avoid_: Range, horizon
-
 **Scheduled Sync**:
-The opt-in automatic Sync of every Week in the Sync Window that is not yet a Synced Week. It never re-Syncs a Synced Week.
+The opt-in automatic Sync that runs each week at the runner's Sync Time, Syncing the calendar week that starts on the first Monday on or after it. It is skipped when the runner has already Synced that calendar week manually.
 _Avoid_: Auto sync, cron, background sync
 
-**Synced Week**:
-A calendar week the app has recorded a Sync for. It is Changed when its Week, from today on, no longer matches what that Sync placed.
-_Avoid_: Last Sync, pushed week
+**Sync Time**:
+The weekday and whole hour, in the runner's timezone, at which their Scheduled Sync runs.
+_Avoid_: Schedule, sync slot
+
+**Sync Record**:
+The record of one attempted Sync: when it ran, the calendar week, whether it was Manual or Scheduled, and its outcome. Together they form the runner's Sync History.
+_Avoid_: Log, sync event, sync run
 
 **intervals.icu Connection**:
 The runner's intervals.icu API key, which Sync pushes with. Not part of Plan Settings.
