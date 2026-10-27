@@ -81,7 +81,13 @@ export function WeekView({
               Distance
             </Explained>
           }
-          value={paces ? `≈ ${Math.round(weeklyDistanceKm(week.days, paces))} km` : '—'}
+          value={
+            paces ? (
+              `≈ ${Math.round(weeklyDistanceKm(week.days, paces))} km`
+            ) : (
+              <span className="text-muted-foreground">N/A</span>
+            )
+          }
           detail={paces ? 'upper bound' : 'needs a 5K Time'}
         />
         <Stat
