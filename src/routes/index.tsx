@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react'
-import { ChevronDownIcon, LogOutIcon } from 'lucide-react'
-import { createFileRoute, Link, redirect, useNavigate, useRouter } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
 import { Explained } from '@/components/explained'
-import { ThemeToggle } from '@/components/theme-toggle'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { AppHeader } from '@/components/app-header'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -104,8 +101,6 @@ const toSettings = (f: FormState): PlanSettings => ({
   fiveKSeconds: parseFiveKTime(f.fiveKTime),
 })
 
-const STAT_LABEL = 'text-xs font-semibold tracking-wider text-muted-foreground uppercase'
-
 const PREFERENCE_LABELS: Record<DayPreference, string> = {
   default: 'Default',
   rest: 'Rest',
@@ -133,7 +128,6 @@ function Home() {
         },
   )
   const [actionError, setActionError] = useState<string>()
-  const [expanded, setExpanded] = useState(!saved)
 
   const settings = toSettings(form)
   const errors = validatePlanSettings(settings)
@@ -173,238 +167,203 @@ function Home() {
   }
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-5 p-4 sm:p-8">
-      <header className="flex items-center justify-between">
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">NSM</h1>
-          <Link to="/how-it-works" className="font-semibold text-primary hover:underline">
-            How this works
-          </Link>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="hidden text-muted-foreground sm:inline">{user.name}</span>
-          <ThemeToggle />
-          <Button variant="outline" size="sm" className="max-sm:w-10 max-sm:px-0" onClick={signOut}>
-            <LogOutIcon className="sm:hidden" />
-            <span className="max-sm:sr-only">Sign out</span>
-          </Button>
-        </div>
-      </header>
-
-      {errors.length === 0 && (
-        <WeekView
-          settings={settings}
-          sessionChoices={sessionChoices}
-          repPaces={paces}
-          hasApiKey={hasApiKey}
-          syncDisabled={!saved || !samePlanSettings(settings, saved)}
-          onReshuffle={() => update({ shuffle: randomShuffle() })}
-          onChooseSession={chooseSession}
-        />
-      )}
-
-      <Card size="sm">
-        <CardContent className="flex flex-col gap-5">
-          <div className="flex items-start justify-between gap-3">
-            <p className="font-semibold sm:text-lg">
-              {form.hours || 0}h {form.minutes || 0}m · {form.warmUp}′ warm-up · {form.coolDown}′
-              cool-down
-              {WEEKDAYS.filter((d) => form.dayPreferences[d]).map((d) => (
-                <span key={d} className="text-muted-foreground capitalize">
-                  {' '}
-                  · {d.slice(0, 3)} {PREFERENCE_LABELS[form.dayPreferences[d]!]}
-                </span>
-              ))}
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              aria-expanded={expanded}
-              onClick={() => setExpanded(!expanded)}
-            >
-              Edit
-              <ChevronDownIcon className={expanded ? 'rotate-180' : undefined} />
-            </Button>
-          </div>
-          <div className="flex flex-col gap-2 border-t pt-4">
-            <div className="grid grid-cols-2 items-end gap-x-4 gap-y-3 sm:flex sm:flex-wrap sm:gap-x-8">
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="five-k-time" className={STAT_LABEL}>
-                  5K Time
-                </Label>
-                <Input
-                  id="five-k-time"
-                  className="h-auto w-24 py-0.5 text-2xl font-extrabold tabular-nums"
-                  placeholder="19:45"
-                  value={form.fiveKTime}
-                  onChange={(e) => update({ fiveKTime: e.target.value })}
-                />
-              </div>
-              {paces &&
-                REP_LENGTHS.map((repLength) => (
-                  <div key={repLength} className="flex flex-col gap-1">
-                    <span className={STAT_LABEL}>{repLength} pace</span>
-                    <span className="text-xl font-extrabold text-primary tabular-nums sm:text-2xl">
-                      {formatRepPace(paces[repLength])}
-                      <span className="ml-0.5 text-sm font-semibold text-muted-foreground">
-                        /km
-                      </span>
-                    </span>
-                  </div>
-                ))}
-            </div>
-            {errors
-              .filter((e) => e.field === 'fiveKTime')
-              .map((e) => (
-                <p key={e.message} className="text-destructive">
-                  {e.message}
-                </p>
-              ))}
-          </div>
-          {expanded && (
-            <>
-              <div className="flex flex-wrap gap-5">
-                <Field label="Weekly Duration" errors={errors} field="weeklyDuration">
-                  <div className="flex items-center gap-2 text-lg font-semibold">
-                    <NumberInput
-                      value={form.hours}
-                      max={9}
-                      onChange={(hours) =>
-                        update({
-                          hours,
-                          minutes: hours !== '' && form.minutes === '' ? '0' : form.minutes,
-                        })
-                      }
-                    />
-                    <span>h</span>
-                    <NumberInput
-                      value={form.minutes}
-                      max={59}
-                      onChange={(minutes) => update({ minutes })}
-                    />
-                    <span>m</span>
-                  </div>
-                </Field>
-                <Field label="Warm-up (min)" errors={errors} field="warmUp">
-                  <NumberInput
-                    value={form.warmUp}
-                    max={99}
-                    onChange={(warmUp) => update({ warmUp })}
-                  />
-                </Field>
-                <Field label="Cool-down (min)" errors={errors} field="coolDown">
-                  <NumberInput
-                    value={form.coolDown}
-                    max={99}
-                    onChange={(coolDown) => update({ coolDown })}
-                  />
-                </Field>
-              </div>
-              <Field
-                label={
-                  <Explained
-                    section="day-preferences"
-                    explanation={`Default leaves the day to the planner. At most ${DAY_PREFERENCE_LIMITS.rest} Rest, ${DAY_PREFERENCE_LIMITS.easy} Easy, ${DAY_PREFERENCE_LIMITS.long} Long and ${DAY_PREFERENCE_LIMITS.subT} SubT days, and SubT days cannot be next to each other.`}
-                  >
-                    Day Preferences
-                  </Explained>
+    <div className="flex min-h-screen flex-col text-sm">
+      <AppHeader user={user} onSignOut={signOut} />
+      <div className="grid flex-1 grid-cols-1 md:grid-cols-[18rem_1fr]">
+        <aside className="flex flex-col gap-5 bg-card p-4 max-md:order-last max-md:border-t md:border-r">
+          <Section title="Plan">
+            <Row label="Weekly Duration" htmlFor="weekly-hours">
+              <NumberInput
+                id="weekly-hours"
+                aria-label="Weekly Duration hours"
+                value={form.hours}
+                max={9}
+                onChange={(hours) =>
+                  update({
+                    hours,
+                    minutes: hours !== '' && form.minutes === '' ? '0' : form.minutes,
+                  })
                 }
-                errors={errors}
-                field="dayPreferences"
+              />
+              <span className="text-muted-foreground">h</span>
+              <NumberInput
+                aria-label="Weekly Duration minutes"
+                value={form.minutes}
+                max={59}
+                onChange={(minutes) => update({ minutes })}
+              />
+              <span className="text-muted-foreground">m</span>
+            </Row>
+            <Row label="Warm-up" htmlFor="warm-up">
+              <NumberInput
+                id="warm-up"
+                value={form.warmUp}
+                max={99}
+                onChange={(warmUp) => update({ warmUp })}
+              />
+              <span className="w-3 text-muted-foreground">′</span>
+            </Row>
+            <Row label="Cool-down" htmlFor="cool-down">
+              <NumberInput
+                id="cool-down"
+                value={form.coolDown}
+                max={99}
+                onChange={(coolDown) => update({ coolDown })}
+              />
+              <span className="w-3 text-muted-foreground">′</span>
+            </Row>
+            <FieldErrors errors={errors} fields={['weeklyDuration', 'warmUp', 'coolDown']} />
+          </Section>
+          <Section title="Paces">
+            <Row label="5K Time" htmlFor="five-k-time">
+              <Input
+                id="five-k-time"
+                className="w-16 px-2 text-right font-semibold tabular-nums"
+                placeholder="19:45"
+                value={form.fiveKTime}
+                onChange={(e) => update({ fiveKTime: e.target.value })}
+              />
+            </Row>
+            {paces &&
+              REP_LENGTHS.map((repLength) => (
+                <Row key={repLength} label={`${repLength} pace`}>
+                  <span className="font-semibold tabular-nums">
+                    {formatRepPace(paces[repLength])}/km
+                  </span>
+                </Row>
+              ))}
+            <FieldErrors errors={errors} fields={['fiveKTime']} />
+          </Section>
+          <Section
+            title={
+              <Explained
+                section="day-preferences"
+                explanation={`Default leaves the day to the planner. At most ${DAY_PREFERENCE_LIMITS.rest} Rest, ${DAY_PREFERENCE_LIMITS.easy} Easy, ${DAY_PREFERENCE_LIMITS.long} Long and ${DAY_PREFERENCE_LIMITS.subT} SubT days, and SubT days cannot be next to each other.`}
               >
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-7">
-                  {WEEKDAYS.map((weekday) => (
-                    <div key={weekday} className="flex flex-col gap-1">
-                      <Label className="text-sm text-muted-foreground capitalize">
-                        {weekday.slice(0, 3)}
-                      </Label>
-                      <Select
-                        value={form.dayPreferences[weekday] ?? 'default'}
-                        onValueChange={(value: DayPreference) => {
-                          const { [weekday]: _, ...rest } = form.dayPreferences
-                          update({
-                            dayPreferences:
-                              value === 'default' ? rest : { ...rest, [weekday]: value },
-                          })
-                        }}
-                      >
-                        <SelectTrigger className="w-full font-semibold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(PREFERENCE_LABELS).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ))}
-                </div>
-              </Field>
-            </>
-          )}
-          {[
-            ...(expanded
-              ? []
-              : errors.filter((e) => e.field !== 'fiveKTime').map((e) => e.message)),
-            ...(actionError ? [actionError] : []),
-          ].map((message) => (
-            <p key={message} className="-mt-3 text-destructive">
-              {message}
+                Day Preferences
+              </Explained>
+            }
+          >
+            {WEEKDAYS.map((weekday) => (
+              <Row key={weekday} label={<span className="capitalize">{weekday}</span>}>
+                <Select
+                  value={form.dayPreferences[weekday] ?? 'default'}
+                  onValueChange={(value: DayPreference) => {
+                    const { [weekday]: _, ...rest } = form.dayPreferences
+                    update({
+                      dayPreferences: value === 'default' ? rest : { ...rest, [weekday]: value },
+                    })
+                  }}
+                >
+                  <SelectTrigger size="sm" aria-label={weekday} className="w-24 font-semibold">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PREFERENCE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Row>
+            ))}
+            <FieldErrors errors={errors} fields={['dayPreferences']} />
+          </Section>
+        </aside>
+
+        <main className="flex min-w-0 flex-col gap-4 p-4">
+          {actionError && <p className="text-destructive">{actionError}</p>}
+          {errors.length === 0 ? (
+            <WeekView
+              settings={settings}
+              sessionChoices={sessionChoices}
+              repPaces={paces}
+              hasApiKey={hasApiKey}
+              syncDisabled={!saved || !samePlanSettings(settings, saved)}
+              onReshuffle={() => update({ shuffle: randomShuffle() })}
+              onChooseSession={chooseSession}
+            />
+          ) : (
+            <p className="text-muted-foreground">
+              Your Week appears here once the plan settings are valid.
             </p>
-          ))}
-        </CardContent>
-      </Card>
-    </main>
+          )}
+        </main>
+      </div>
+    </div>
   )
 }
 
-function Field({
+function Section({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-1">
+      <h2 className="mb-0.5 border-b pb-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
+        {title}
+      </h2>
+      {children}
+    </section>
+  )
+}
+
+function Row({
   label,
-  errors,
-  field,
+  htmlFor,
   children,
 }: {
   label: React.ReactNode
-  errors: PlanSettingsError[]
-  field: PlanSettingsError['field']
+  htmlFor?: string
   children: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-2">
-      <Label>{label}</Label>
+    <div className="flex min-h-9 items-center gap-1.5">
+      <Label
+        htmlFor={htmlFor}
+        className="flex-1 font-normal whitespace-nowrap text-muted-foreground"
+      >
+        {label}
+      </Label>
       {children}
-      {errors
-        .filter((e) => e.field === field)
-        .map((e) => (
-          <p key={e.message} className="text-destructive">
-            {e.message}
-          </p>
-        ))}
     </div>
   )
+}
+
+function FieldErrors({
+  errors,
+  fields,
+}: {
+  errors: PlanSettingsError[]
+  fields: PlanSettingsError['field'][]
+}) {
+  return errors
+    .filter((e) => fields.includes(e.field))
+    .map((e) => (
+      <p key={e.message} className="text-destructive">
+        {e.message}
+      </p>
+    ))
 }
 
 function NumberInput({
   value,
   max,
   onChange,
-}: {
+  ...props
+}: Omit<React.ComponentProps<'input'>, 'value' | 'max' | 'onChange'> & {
   value: string
   max: number
   onChange: (value: string) => void
 }) {
   return (
     <Input
-      className="w-18 text-lg"
+      className="w-11 px-2 text-right font-semibold tabular-nums"
       inputMode="numeric"
       value={value}
       onChange={(e) => {
         const next = e.target.value
         if (/^\d*$/.test(next) && (next === '' || Number(next) <= max)) onChange(next)
       }}
+      {...props}
     />
   )
 }

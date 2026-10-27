@@ -1,10 +1,9 @@
-import { Fragment, useState } from 'react'
+import { useState } from 'react'
 import { ShuffleIcon } from 'lucide-react'
 import { cn } from 'cn'
 import { Explained } from '@/components/explained'
 import { SyncDialog } from '@/components/sync-dialog'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -24,7 +23,7 @@ import {
   type Day,
   type PlanSettings,
   type SessionChoice,
-  type SubThresholdSession,
+  type Week,
   type Weekday,
 } from '@/planner/planner'
 import {
@@ -54,42 +53,49 @@ export function WeekView({
   onChooseSession: (weekday: Weekday, repFormat?: RepFormat) => void
 }) {
   const week = deriveWeek(settings, sessionChoices)
-  const [selected, setSelected] = useState<number>()
+  const [selected, setSelected] = useState(() =>
+    Math.max(
+      0,
+      week.days.findIndex((d) => d.type === 'subT'),
+    ),
+  )
+  const day = week.days[selected]!
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <dl className="grid flex-1 grid-cols-3 gap-2 sm:gap-3">
-          <Stat
-            label="Total"
-            value={`${Math.floor(week.totalMinutes / 60)}h ${week.totalMinutes % 60}m`}
-            unit={<span className="max-sm:hidden">({week.totalMinutes} min)</span>}
-          />
-          <Stat
-            label={
-              <Explained
-                section="budget"
-                explanation="Rep minutes only. Warm-ups, cool-downs and Recoveries count as easy time."
-              >
-                Sub-threshold work
-              </Explained>
-            }
-            value={week.subThresholdWorkMinutes}
-            unit="min"
-          />
-          <Stat
-            label={
-              <Explained
-                section="budget"
-                explanation={`Sub-threshold work ÷ total running time. The target at this Weekly Duration is ${week.subThresholdTargetPercent}%.`}
-              >
-                Sub-threshold share
-              </Explained>
-            }
-            value={week.subThresholdPercent.toFixed(1)}
-            unit="%"
-          />
-        </dl>
-        <div className="flex gap-3">
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-[repeat(4,auto)_1fr]">
+        <Stat label="Total" value={clock(week.totalMinutes)} detail={`${week.totalMinutes} min`} />
+        <Stat
+          label={
+            <Explained
+              section="budget"
+              explanation="Rep minutes only. Warm-ups, cool-downs and Recoveries count as easy time."
+            >
+              Sub-threshold work
+            </Explained>
+          }
+          value={`${week.subThresholdWorkMinutes}′`}
+          detail="rep minutes"
+        />
+        <Stat
+          label={
+            <Explained
+              section="budget"
+              explanation={`Sub-threshold work ÷ total running time. The target at this Weekly Duration is ${week.subThresholdTargetPercent}%.`}
+            >
+              Sub-threshold share
+            </Explained>
+          }
+          value={`${week.subThresholdPercent.toFixed(1)}%`}
+          detail={`target ${week.subThresholdTargetPercent}%`}
+        >
+          <ShareBar week={week} />
+        </Stat>
+        <Stat
+          label="Runs"
+          value={week.days.filter((d) => d.type !== 'rest').length}
+          detail={`${week.days.filter((d) => d.type === 'subT').length} sub-threshold`}
+        />
+        <div className="col-span-2 flex items-center justify-end gap-2 bg-card px-4 py-2.5 sm:col-span-1">
           <Button
             variant="secondary"
             size="icon"
@@ -102,138 +108,195 @@ export function WeekView({
           <SyncDialog week={week} hasApiKey={hasApiKey} disabled={syncDisabled} />
         </div>
       </div>
-      <ol className="grid grid-cols-1 gap-2 lg:grid-cols-7">
-        {week.days.map((day, i) => (
-          <Fragment key={day.weekday}>
-            <DayCell
+      <section className="rounded-lg border bg-card p-4">
+        <header className="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <h2 className="font-bold">Weekly load</h2>
+          <Legend />
+        </header>
+        <LoadChart days={week.days} selected={selected} onSelect={setSelected} />
+      </section>
+      <DayBreakdown
+        day={day}
+        repPaces={repPaces}
+        sessionPicker={
+          day.type === 'subT' && (
+            <SessionPicker
               day={day}
-              selected={selected === i}
-              onSelect={() => setSelected(selected === i ? undefined : i)}
+              settings={settings}
+              sessionChoices={sessionChoices}
+              onChoose={(repFormat) => onChooseSession(day.weekday, repFormat)}
             />
-            {selected === i && (
-              <li className="lg:order-last lg:col-span-7">
-                <DayBreakdown
-                  day={day}
-                  repPaces={repPaces}
-                  sessionPicker={
-                    day.type === 'subT' && (
-                      <SessionPicker
-                        day={day}
-                        settings={settings}
-                        sessionChoices={sessionChoices}
-                        onChoose={(repFormat) => onChooseSession(day.weekday, repFormat)}
-                      />
-                    )
-                  }
-                />
-              </li>
-            )}
-          </Fragment>
-        ))}
-      </ol>
+          )
+        }
+      />
     </div>
   )
 }
 
+const clock = (minutes: number) =>
+  `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
+
 function Stat({
   label,
   value,
-  unit,
+  detail,
+  children,
 }: {
   label: React.ReactNode
-  value: number | string
-  unit: React.ReactNode
+  value: React.ReactNode
+  detail: string
+  children?: React.ReactNode
 }) {
   return (
-    <Card size="sm">
-      <CardContent>
-        <dt className="text-xs font-semibold text-muted-foreground sm:text-sm">{label}</dt>
-        <dd className="text-xl font-extrabold sm:text-3xl">
-          {value}
-          <span className="ml-1 text-sm font-semibold text-muted-foreground sm:text-base">
-            {unit}
-          </span>
-        </dd>
-      </CardContent>
-    </Card>
-  )
-}
-
-function DayCell({
-  day,
-  selected,
-  onSelect,
-}: {
-  day: Day
-  selected: boolean
-  onSelect: () => void
-}) {
-  const color = `var(--day-${day.type})`
-  return (
-    <li
-      tabIndex={0}
-      aria-expanded={selected}
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault()
-          onSelect()
-        }
-      }}
-      className={cn(
-        'flex cursor-pointer items-center gap-4 rounded-xl border-l-4 p-3 ring-1 lg:min-h-36 lg:flex-col lg:items-stretch lg:gap-2 lg:border-t-4 lg:border-l-0',
-        selected ? 'ring-2 ring-foreground/60' : 'ring-foreground/5',
-      )}
-      style={{ borderColor: color, background: `color-mix(in oklch, ${color} 10%, var(--card))` }}
-    >
-      <span className="w-10 shrink-0 text-center font-extrabold capitalize lg:w-auto lg:text-left">
-        {day.weekday.slice(0, 3)}
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5 lg:flex-none lg:gap-2">
-        <span className="text-xs font-bold" style={{ color }}>
-          {day.type === 'rest' && day.merged ? (
-            <Explained
-              section="easy-runs"
-              explanation={`Easy Runs this week would have been ${SHORT_EASY_RUN_MINUTES} min or less, so two were combined into one run and this day became a Rest Day.`}
-            >
-              {DAY_TYPE_LABELS.rest}
-            </Explained>
-          ) : (
-            DAY_TYPE_LABELS[day.type]
-          )}
-        </span>
-        {day.type === 'subT' && <SessionDetails session={day.session} />}
+    <div className="flex flex-col bg-card px-4 py-2.5 sm:min-w-36">
+      <div className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+        {label}
       </div>
-      {day.type !== 'rest' && (
-        <p className="text-2xl font-extrabold lg:mt-auto">
-          {day.type === 'subT' ? day.session.minutes : day.minutes}
-          <span className="ml-1 text-sm font-semibold text-muted-foreground">min</span>
-        </p>
-      )}
-    </li>
+      <div className="text-xl leading-tight font-extrabold tabular-nums">{value}</div>
+      <div className="text-xs text-muted-foreground">{detail}</div>
+      {children}
+    </div>
   )
 }
 
-function SessionDetails({ session }: { session: SubThresholdSession }) {
+const SHARE_BAR_MAX_PERCENT = 30
+
+function ShareBar({ week }: { week: Week }) {
+  const position = (percent: number) =>
+    `${(Math.min(percent, SHARE_BAR_MAX_PERCENT) / SHARE_BAR_MAX_PERCENT) * 100}%`
   return (
-    <div className="flex flex-col">
-      <p className="font-bold">{repFormatLabel(session.repFormat)}</p>
-      <p className="truncate text-sm text-muted-foreground lg:hidden">
-        {session.warmUpMinutes}′ warm-up · {session.recoveryMinutes}′ Recoveries ·{' '}
-        {session.coolDownMinutes}′ cool-down
-      </p>
+    <div className="relative mt-1.5 h-1 rounded-full bg-muted">
+      <div
+        className="h-1 rounded-full bg-primary"
+        style={{ width: position(week.subThresholdPercent) }}
+      />
+      <div
+        className="absolute -top-0.5 h-2 w-0.5 bg-foreground"
+        style={{ left: position(week.subThresholdTargetPercent) }}
+      />
     </div>
   )
 }
 
 type StepKind = 'warmUp' | 'rep' | 'recovery' | 'coolDown' | 'easy'
 
-const STEP_COLORS: Record<StepKind, string> = {
-  warmUp: 'color-mix(in oklch, var(--day-easy) 55%, var(--card))',
-  rep: 'var(--day-subT)',
-  recovery: 'color-mix(in oklch, var(--day-easy) 35%, var(--card))',
-  coolDown: 'color-mix(in oklch, var(--day-easy) 55%, var(--card))',
-  easy: 'var(--day-easy)',
+const EASY_STEP_COLOR = 'color-mix(in oklch, var(--day-easy) 45%, var(--card))'
+
+const stepColor = (kind: StepKind, day: Day) =>
+  kind === 'rep' ? 'var(--day-subT)' : kind === 'easy' ? `var(--day-${day.type})` : EASY_STEP_COLOR
+
+const LEGEND = [
+  ['Reps', 'var(--day-subT)'],
+  ['Warm-up, Recovery, cool-down', EASY_STEP_COLOR],
+  ['Easy', 'var(--day-easy)'],
+  ['Long', 'var(--day-long)'],
+]
+
+function Legend() {
+  return (
+    <ul className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+      {LEGEND.map(([label, color]) => (
+        <li key={label} className="flex items-center gap-1">
+          <span className="size-2 rounded-sm" style={{ background: color }} />
+          {label}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+const dayMinutes = (day: Day) =>
+  day.type === 'subT' ? day.session.minutes : day.type === 'rest' ? 0 : day.minutes
+
+const CHART_HEIGHT = 160
+const TICK_MINUTES = 30
+
+function LoadChart({
+  days,
+  selected,
+  onSelect,
+}: {
+  days: Day[]
+  selected: number
+  onSelect: (index: number) => void
+}) {
+  const max = Math.ceil(Math.max(...days.map(dayMinutes)) / TICK_MINUTES) * TICK_MINUTES
+  const ticks = Array.from({ length: max / TICK_MINUTES + 1 }, (_, i) => i * TICK_MINUTES)
+  const bottom = (minutes: number) => `${(minutes / max) * 100}%`
+  return (
+    <div className="flex gap-2">
+      <div
+        className="relative w-6 shrink-0 text-right text-xs text-muted-foreground tabular-nums"
+        style={{ height: CHART_HEIGHT }}
+      >
+        {ticks.map((t) => (
+          <span key={t} className="absolute right-0 translate-y-1/2" style={{ bottom: bottom(t) }}>
+            {t}
+          </span>
+        ))}
+      </div>
+      <div className="relative min-w-0 flex-1">
+        <div className="absolute inset-x-0 top-0" style={{ height: CHART_HEIGHT }}>
+          {ticks.map((t) => (
+            <div key={t} className="absolute inset-x-0 border-t" style={{ bottom: bottom(t) }} />
+          ))}
+        </div>
+        <ol className="relative grid grid-cols-7 gap-1 sm:gap-3">
+          {days.map((day, i) => {
+            const minutes = dayMinutes(day)
+            return (
+              <li key={day.weekday}>
+                <button
+                  type="button"
+                  aria-pressed={selected === i}
+                  onClick={() => onSelect(i)}
+                  className={cn(
+                    'flex w-full cursor-pointer flex-col rounded-md text-center text-xs hover:bg-muted/50',
+                    selected === i && 'bg-muted/70 hover:bg-muted/70',
+                  )}
+                >
+                  <span className="flex flex-col justify-end" style={{ height: CHART_HEIGHT }}>
+                    {minutes > 0 && (
+                      <span className="mb-0.5 font-bold tabular-nums">{minutes}′</span>
+                    )}
+                    <span
+                      className="mx-auto flex w-full max-w-10 flex-col-reverse gap-0.5 px-1 sm:px-0"
+                      style={{ height: bottom(minutes) }}
+                    >
+                      {steps(day).map((step, j, all) => (
+                        <span
+                          key={step.start}
+                          title={`${step.label} ${step.minutes}′`}
+                          className={cn(j === all.length - 1 && 'rounded-t-sm')}
+                          style={{ flexGrow: step.minutes, background: stepColor(step.kind, day) }}
+                        />
+                      ))}
+                    </span>
+                  </span>
+                  <span
+                    className={cn(
+                      'flex flex-col px-0.5 pt-1 pb-1.5',
+                      selected === i && 'shadow-[inset_0_-2px_0_var(--primary)]',
+                    )}
+                  >
+                    <span className="font-bold capitalize">{day.weekday.slice(0, 3)}</span>
+                    <span className="truncate text-muted-foreground">
+                      {DAY_TYPE_LABELS[day.type]}
+                    </span>
+                    {day.type === 'subT' && (
+                      <span className="truncate text-muted-foreground max-sm:hidden">
+                        {repFormatLabel(day.session.repFormat)}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              </li>
+            )
+          })}
+        </ol>
+      </div>
+    </div>
+  )
 }
 
 const DAY_TITLES: Record<Day['type'], string> = {
@@ -267,8 +330,7 @@ function steps(day: Day, repPaces?: RepPaces) {
   })
 }
 
-const clock = (minutes: number) =>
-  `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
+const CELL = 'px-2 py-1.5 whitespace-nowrap sm:px-4'
 
 function DayBreakdown({
   day,
@@ -280,42 +342,51 @@ function DayBreakdown({
   sessionPicker: React.ReactNode
 }) {
   return (
-    <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-      <h2 className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-lg font-extrabold">
-        <span>
-          <span className="capitalize">{day.weekday}</span> · {DAY_TITLES[day.type]}
-        </span>
+    <section className="overflow-hidden rounded-lg border bg-card">
+      <header className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b px-4 py-2">
+        <h2 className="font-bold">
+          <span className="capitalize">{day.weekday}</span> ·{' '}
+          {day.type === 'rest' && day.merged ? (
+            <Explained
+              section="easy-runs"
+              explanation={`Easy Runs this week would have been ${SHORT_EASY_RUN_MINUTES} min or less, so two were combined into one run and this day became a Rest Day.`}
+            >
+              {DAY_TITLES.rest}
+            </Explained>
+          ) : (
+            DAY_TITLES[day.type]
+          )}
+        </h2>
         {sessionPicker}
         {day.type !== 'rest' && (
-          <span className="text-muted-foreground">
-            {day.type === 'subT' ? day.session.minutes : day.minutes} min
-          </span>
+          <span className="ml-auto font-semibold tabular-nums">{dayMinutes(day)} min</span>
         )}
-      </h2>
+      </header>
       {day.type === 'rest' ? (
-        <p className="text-muted-foreground">No run today.</p>
+        <p className={cn(CELL, 'py-2 text-muted-foreground')}>No run today.</p>
       ) : (
-        <ol>
-          {steps(day, repPaces).map((step) => (
-            <li
-              key={step.start}
-              className="flex items-center gap-3 border-b py-1.5 last:border-b-0"
-            >
-              <span className="w-12 text-sm text-muted-foreground tabular-nums">
-                {clock(step.start)}
-              </span>
-              <span
-                className="h-6 w-1.5 shrink-0 rounded-full"
-                style={{ background: STEP_COLORS[step.kind] }}
-              />
-              <span className="flex flex-wrap gap-x-2">
-                <span className={step.kind === 'rep' ? 'font-bold' : undefined}>{step.label}</span>
-                {step.pace && <span className="text-muted-foreground">{step.pace}</span>}
-              </span>
-              <span className="ml-auto font-semibold tabular-nums">{step.minutes}′</span>
-            </li>
-          ))}
-        </ol>
+        <table className="w-full tabular-nums">
+          <thead className="text-xs text-muted-foreground uppercase">
+            <tr className="border-b text-left">
+              <th className={cn(CELL, 'w-16 font-semibold')}>Start</th>
+              <th className={cn(CELL, 'font-semibold')}>Step</th>
+              <th className={cn(CELL, 'font-semibold')}>Pace</th>
+              <th className={cn(CELL, 'text-right font-semibold')}>Dur</th>
+            </tr>
+          </thead>
+          <tbody>
+            {steps(day, repPaces).map((step) => (
+              <tr key={step.start} className="border-b last:border-0 even:bg-muted/30">
+                <td className={cn(CELL, 'text-muted-foreground')}>{clock(step.start)}</td>
+                <td className={cn(CELL, step.kind === 'rep' && 'font-bold text-primary')}>
+                  {step.label}
+                </td>
+                <td className={cn(CELL, 'text-muted-foreground')}>{step.pace}</td>
+                <td className={cn(CELL, 'text-right font-semibold')}>{step.minutes}′</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
       {day.type === 'subT' && (
         <PaceNote repLength={day.session.repFormat.repLength} repPaces={repPaces} />
@@ -358,7 +429,7 @@ function SessionPicker({
         )
       }
     >
-      <SelectTrigger size="sm" className="font-extrabold">
+      <SelectTrigger className="font-extrabold">
         <SelectValue>
           {current}
           {current === plannerLabel && (
@@ -406,7 +477,7 @@ function ShareOption({ label, share, reason }: { label: string; share?: string; 
 function PaceNote({ repLength, repPaces }: { repLength: RepLength; repPaces?: RepPaces }) {
   const racePace = RACE_PACES[repLength]
   return (
-    <p className="mt-3 text-sm text-muted-foreground">
+    <p className="border-t px-4 py-2 text-muted-foreground">
       {repPaces
         ? `Run the reps at ${formatRepPace(repPaces[repLength])}/km, from your current ${racePace} to slightly slower.`
         : `Run the reps at your current ${racePace}.`}
