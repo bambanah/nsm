@@ -47,6 +47,7 @@ export function WeekView({
   paces,
   hasApiKey,
   syncDisabled,
+  isGuest,
   onReshuffle,
   onChooseSession,
 }: {
@@ -55,6 +56,7 @@ export function WeekView({
   paces?: Paces
   hasApiKey: boolean
   syncDisabled: boolean
+  isGuest: boolean
   onReshuffle: () => void
   onChooseSession: (weekday: Weekday, repFormat?: RepFormat) => void
 }) {
@@ -69,11 +71,7 @@ export function WeekView({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-[repeat(4,auto)_1fr]">
-        <Stat
-          label="Total"
-          value={clock(week.totalMinutes)}
-          detail={`${week.totalMinutes} min`}
-        />
+        <Stat label="Total" value={clock(week.totalMinutes)} detail={`${week.totalMinutes} min`} />
         <Stat
           label={
             <Explained
@@ -122,7 +120,7 @@ export function WeekView({
           >
             <ShuffleIcon />
           </Button>
-          <SyncDialog week={week} hasApiKey={hasApiKey} disabled={syncDisabled} />
+          <SyncDialog week={week} hasApiKey={hasApiKey} disabled={syncDisabled} isGuest={isGuest} />
         </div>
       </div>
       <section className="rounded-lg border bg-card p-4">

@@ -4,6 +4,12 @@ Plans a Norwegian Singles Method running week from a weekly time budget, followi
 
 ## Language
 
+### Runners
+
+**Guest**:
+A runner using the app without signing in. A Guest plans like any runner but cannot Sync, and their Plan Settings and Session Choices stay on the device they plan on.
+_Avoid_: Anonymous user, visitor, local user
+
 ### Planning
 
 **Plan Settings**:
@@ -23,7 +29,7 @@ The value in the Plan Settings that fixes every choice the planning model leaves
 _Avoid_: Seed, randomise
 
 **Week**:
-The Monday-to-Sunday set of runs for one calendar week, derived from the Plan Settings and that week's Monday with the Session Choices applied. Never stored itself.
+The Monday-to-Sunday set of runs derived from the Plan Settings with the Session Choices applied. It belongs to no calendar week until a Sync places it on one. Never stored itself.
 _Avoid_: Plan, schedule
 
 ### Runs
@@ -33,7 +39,7 @@ One of the three interval days in a Week: warm-up, a Rep Format at its Rep Lengt
 _Avoid_: SubT workout, quality session, workout
 
 **Session Choice**:
-The Rep Format the runner picked for a Sub-threshold Session on a given day of a given Week, in place of the planner's pick. Deleted once that day is no longer a Sub-threshold Session or the Rep Format exceeds the per-session cap.
+The Rep Format the runner picked for the Week's Sub-threshold Session on a given weekday, in place of the planner's pick. Deleted once that weekday is no longer a Sub-threshold Session or the Rep Format exceeds the per-session cap.
 _Avoid_: Override, edit, custom session
 
 **Rep Format**:
@@ -85,7 +91,7 @@ A day with no run, either requested or produced when short Easy Runs are merged.
 ### Sync
 
 **Sync**:
-Placing a Week on its calendar week in intervals.icu, replacing every Managed Workout from today on in that calendar week and leaving everything else untouched, so days already past keep what was last Synced.
+Placing the Week on a calendar week in intervals.icu, replacing every Managed Workout from today on in that calendar week and leaving everything else untouched, so days already past keep what was last Synced.
 _Avoid_: Export, schedule, upload, publish
 
 **Managed Workout**:

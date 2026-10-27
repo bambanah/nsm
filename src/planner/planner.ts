@@ -108,6 +108,16 @@ export function deadSessionChoices<T extends SessionChoice>(
   )
 }
 
+export function sessionChoiceError(settings: PlanSettings, choice: SessionChoice) {
+  const { repLength, reps, repMinutes } = choice.repFormat
+  const known = REP_FORMATS.some(
+    (f) => f.repLength === repLength && f.reps === reps && f.repMinutes === repMinutes,
+  )
+  if (!known) return 'Unknown Rep Format'
+  if (deadSessionChoices(settings, [choice]).length > 0)
+    return 'That Rep Format does not fit this day'
+}
+
 function planDays(
   settings: PlanSettings,
   repFormats: RepFormat[],

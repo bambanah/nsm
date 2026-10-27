@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { Wordmark } from '@/components/app-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { authClient } from '@/auth/auth-client'
 import { getUser } from '@/auth/auth.functions'
+import { clearGuestPlan, loadGuestPlan } from '@/guest/guest-plan'
+import { adoptGuestPlan } from '@/plan-settings/plan-settings.functions'
 
 export const Route = createFileRoute('/sign-in')({
   beforeLoad: async () => {
@@ -28,6 +30,15 @@ function SignIn() {
       ? await authClient.signUp.email({ name: String(form.get('name')), email, password })
       : await authClient.signIn.email({ email, password })
     if (result.error) return setError(result.error.message)
+    const guestPlan = loadGuestPlan()
+    if (guestPlan) {
+      try {
+        await adoptGuestPlan({ data: guestPlan })
+      } catch (e) {
+        return setError((e as Error).message)
+      }
+      clearGuestPlan()
+    }
     await navigate({ to: '/' })
   }
 
@@ -69,6 +80,9 @@ function SignIn() {
           }}
         >
           {isSignUp ? 'Have an account? Sign in' : 'No account? Sign up'}
+        </Button>
+        <Button variant="link" asChild>
+          <Link to="/">Continue without signing in</Link>
         </Button>
       </form>
     </main>
