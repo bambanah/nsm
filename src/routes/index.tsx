@@ -167,7 +167,7 @@ function Home() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col text-sm">
+    <div className="flex min-h-dvh flex-col text-sm">
       <AppHeader user={user} onSignOut={signOut} />
       <div className="grid flex-1 grid-cols-1 md:grid-cols-[18rem_1fr]">
         <aside className="flex flex-col gap-5 bg-card p-4 max-md:order-last max-md:border-t md:border-r">
