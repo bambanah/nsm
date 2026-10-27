@@ -1,6 +1,6 @@
 # NSM Planner
 
-Plans a Norwegian Singles Method running week from Plan Settings and Syncs it to a calendar week in intervals.icu on demand. See `GLOSSARY.md` for the domain language and `docs/` for decisions and the sources behind each planner rule.
+Plans a Norwegian Singles Method running week from Plan Settings and Syncs it to a calendar week in intervals.icu on demand or as a weekly Scheduled Sync. See `GLOSSARY.md` for the domain language and `docs/` for decisions and the sources behind each planner rule.
 
 ## Environment variables
 

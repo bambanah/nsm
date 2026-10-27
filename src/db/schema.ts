@@ -1,4 +1,15 @@
-import { integer, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  date,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  serial,
+  text,
+  timestamp,
+} from 'drizzle-orm/pg-core'
 import type { PlanSettings, Weekday } from '@/planner/planner'
 import type { RepLength } from '@/planner/rep-formats'
 import { user } from './auth-schema'
@@ -40,3 +51,31 @@ export const intervalsConnections = pgTable('intervals_connections', {
   apiKeyEncrypted: text('api_key_encrypted').notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
+
+export const scheduledSyncs = pgTable('scheduled_syncs', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  enabled: boolean('enabled').notNull(),
+  weekday: text('weekday').$type<Weekday>().notNull(),
+  hour: integer('hour').notNull(),
+  timeZone: text('time_zone').notNull(),
+  savedAt: timestamp('saved_at').notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const syncRecords = pgTable(
+  'sync_records',
+  {
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    ranAt: timestamp('ran_at').notNull(),
+    monday: date('monday').notNull(),
+    trigger: text('trigger').$type<'manual' | 'scheduled'>().notNull(),
+    outcome: text('outcome').$type<'succeeded' | 'failed' | 'skipped'>().notNull(),
+    error: text('error'),
+  },
+  (t) => [index('sync_records_user_id_ran_at_idx').on(t.userId, t.ranAt)],
+)

@@ -15,11 +15,40 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { format } from 'date-fns'
 import { addDaysTo, mondayOf, parseDate, weekLabel } from '@/lib/week-dates'
-import { DAY_TYPE_LABELS, WEEKDAYS, type Week } from '@/planner/planner'
+import { DAY_TYPE_LABELS, WEEKDAYS, type Week, type Weekday } from '@/planner/planner'
 import { repFormatLabel } from '@/planner/rep-formats'
-import { syncWeek } from '@/sync/sync.functions'
+import { getSyncState, saveScheduledSync, syncWeek } from '@/sync/sync.functions'
+
+export type SyncState = Awaited<ReturnType<typeof getSyncState>>
+
+const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
+
+const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`
+
+const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone
+
+type SyncRecord = SyncState['syncHistory'][number]
+
+const TRIGGER_LABELS: Record<SyncRecord['trigger'], string> = {
+  manual: 'Manual',
+  scheduled: 'Scheduled',
+}
+
+const OUTCOME_LABELS: Record<SyncRecord['outcome'], string> = {
+  succeeded: 'Succeeded',
+  failed: 'Failed',
+  skipped: 'Skipped, already Synced manually',
+}
 
 const weekOf = (monday: string) => ({
   from: parseDate(monday),
@@ -40,12 +69,12 @@ const selectedWeek = (monday?: string) =>
 
 export function SyncDialog({
   week,
-  hasApiKey,
+  syncState: { hasApiKey, scheduledSync, syncHistory },
   disabled,
   isGuest,
 }: {
   week: Week
-  hasApiKey: boolean
+  syncState: SyncState
   disabled: boolean
   isGuest: boolean
 }) {
@@ -77,12 +106,12 @@ export function SyncDialog({
       await syncWeek({ data: { monday, apiKey: showKeyField ? apiKey : undefined } })
       toast.success(`Synced to ${weekLabel(monday)}`)
       onOpenChange(false)
-      await router.invalidate()
     } catch (e) {
       setError((e as Error).message)
     } finally {
       setSyncing(false)
     }
+    await router.invalidate()
   }
 
   if (isGuest)
@@ -158,6 +187,8 @@ export function SyncDialog({
           )}
         </div>
         {error && <p className="text-destructive">{error}</p>}
+        <ScheduledSyncSection scheduledSync={scheduledSync} hasApiKey={hasApiKey} />
+        <SyncHistory records={syncHistory} />
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
@@ -194,5 +225,126 @@ function Activities({ week, monday }: { week: Week; monday: string }) {
         )
       })}
     </ul>
+  )
+}
+
+function ScheduledSyncSection({
+  scheduledSync,
+  hasApiKey,
+}: {
+  scheduledSync: SyncState['scheduledSync']
+  hasApiKey: boolean
+}) {
+  const router = useRouter()
+  const [form, setForm] = useState(
+    () =>
+      scheduledSync ?? {
+        enabled: false,
+        weekday: 'sunday' as Weekday,
+        hour: 18,
+        timeZone: browserTimeZone(),
+      },
+  )
+  const [error, setError] = useState<string>()
+
+  const save = async (patch: Partial<typeof form>) => {
+    const next = { ...form, ...patch, timeZone: browserTimeZone() }
+    setForm(next)
+    setError(undefined)
+    try {
+      await saveScheduledSync({ data: next })
+      await router.invalidate()
+    } catch (e) {
+      setForm(form)
+      setError((e as Error).message)
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-2 border-t pt-4">
+      <div className="flex items-center gap-2">
+        <Switch
+          id="scheduled-sync"
+          checked={form.enabled}
+          disabled={!hasApiKey && !form.enabled}
+          onCheckedChange={(enabled) => save({ enabled })}
+        />
+        <Label htmlFor="scheduled-sync">Scheduled Sync</Label>
+      </div>
+      {!hasApiKey && (
+        <p className="text-muted-foreground">Save an intervals.icu API key to turn it on.</p>
+      )}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-muted-foreground">Every</span>
+        <Select
+          value={form.weekday}
+          disabled={!form.enabled}
+          onValueChange={(weekday: Weekday) => save({ weekday })}
+        >
+          <SelectTrigger size="sm" aria-label="Sync Time weekday" className="capitalize">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {WEEKDAYS.map((weekday) => (
+              <SelectItem key={weekday} value={weekday} className="capitalize">
+                {weekday}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-muted-foreground">at</span>
+        <Select
+          value={String(form.hour)}
+          disabled={!form.enabled}
+          onValueChange={(hour) => save({ hour: Number(hour) })}
+        >
+          <SelectTrigger size="sm" aria-label="Sync Time hour" className="tabular-nums">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {HOURS.map((hour) => (
+              <SelectItem key={hour} value={String(hour)} className="tabular-nums">
+                {formatHour(hour)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-muted-foreground">{form.timeZone}</span>
+      </div>
+      {error && <p className="text-destructive">{error}</p>}
+    </section>
+  )
+}
+
+function SyncHistory({ records }: { records: SyncState['syncHistory'] }) {
+  return (
+    <section className="flex flex-col gap-1 border-t pt-4">
+      <h3 className="font-semibold">Sync History</h3>
+      {records.length === 0 ? (
+        <p className="text-muted-foreground">No Syncs yet</p>
+      ) : (
+        <ul aria-label="Sync History" className="text-sm">
+          {records.map((r) => (
+            <li key={r.id} className="border-b py-1 last:border-b-0">
+              <div className="flex flex-wrap gap-x-3">
+                <span className="text-muted-foreground tabular-nums">
+                  {format(r.ranAt, 'd MMM HH:mm')}
+                </span>
+                <span>{weekLabel(r.monday)}</span>
+                <span className="text-muted-foreground">{TRIGGER_LABELS[r.trigger]}</span>
+                <span
+                  className={
+                    r.outcome === 'failed' ? 'font-semibold text-destructive' : 'font-semibold'
+                  }
+                >
+                  {OUTCOME_LABELS[r.outcome]}
+                </span>
+              </div>
+              {r.error && <p className="text-destructive">{r.error}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }

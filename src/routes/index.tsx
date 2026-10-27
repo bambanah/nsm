@@ -17,7 +17,7 @@ import { authClient } from '@/auth/auth-client'
 import { getUser } from '@/auth/auth.functions'
 import { loadGuestPlan, saveGuestPlan, type GuestPlan } from '@/guest/guest-plan'
 import { getPlanSettings, savePlanSettings } from '@/plan-settings/plan-settings.functions'
-import { getIntervalsConnection } from '@/sync/sync.functions'
+import { getSyncState } from '@/sync/sync.functions'
 import {
   deleteSessionChoice,
   getSessionChoices,
@@ -46,13 +46,18 @@ export const Route = createFileRoute('/')({
   head: () => ({ meta: [{ title: 'NSM | Planner' }] }),
   beforeLoad: async () => ({ user: await getUser() }),
   loader: async ({ context: { user } }) => {
-    if (!user) return { settings: null, sessionChoices: [], hasApiKey: false }
-    const [settings, sessionChoices, connection] = await Promise.all([
+    if (!user)
+      return {
+        settings: null,
+        sessionChoices: [],
+        syncState: { hasApiKey: false, scheduledSync: null, syncHistory: [] },
+      }
+    const [settings, sessionChoices, syncState] = await Promise.all([
       getPlanSettings(),
       getSessionChoices(),
-      getIntervalsConnection(),
+      getSyncState(),
     ])
-    return { settings, sessionChoices, hasApiKey: connection.hasApiKey }
+    return { settings, sessionChoices, syncState }
   },
   component: Home,
 })
@@ -346,7 +351,7 @@ function Planner() {
               settings={settings}
               sessionChoices={sessionChoices}
               paces={paces}
-              hasApiKey={loaded.hasApiKey}
+              syncState={loaded.syncState}
               isGuest={!user}
               syncDisabled={!saved || !samePlanSettings(settings, saved)}
               onReshuffle={() => update({ shuffle: randomShuffle() })}

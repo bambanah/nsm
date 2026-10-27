@@ -2,21 +2,38 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireUserId } from '@/auth/auth.server'
 import { addDaysTo, mondayOf, parseDate } from '@/lib/week-dates'
-import { findPlanSettings } from '@/plan-settings/plan-settings.server'
-import { deriveWeek } from '@/planner/planner'
-import { findSessionChoices } from '@/session-choices/session-choices.server'
-import { findApiKey, hasApiKey, saveApiKey } from './intervals-connection.server'
-import { replaceManagedWorkouts } from './intervals.server'
-import { workouts } from './workouts'
+import { WEEKDAYS } from '@/planner/planner'
+import { hasApiKey, saveApiKey } from './intervals-connection.server'
+import { findScheduledSync, findSyncHistory, runSync, upsertScheduledSync } from './sync.server'
 
 const syncSchema = z.object({
   monday: z.iso.date().refine((d) => parseDate(d).getDay() === 1, 'Not a Monday'),
   apiKey: z.string().trim().min(1).optional(),
 })
 
-export const getIntervalsConnection = createServerFn({ method: 'GET' }).handler(async () => ({
-  hasApiKey: await hasApiKey(await requireUserId()),
-}))
+const scheduledSyncSchema = z.object({
+  enabled: z.boolean(),
+  weekday: z.enum(WEEKDAYS),
+  hour: z.number().int().min(0).max(23),
+  timeZone: z.string().refine((timeZone) => {
+    try {
+      new Intl.DateTimeFormat('en', { timeZone })
+      return true
+    } catch {
+      return false
+    }
+  }, 'Unknown timezone'),
+})
+
+export const getSyncState = createServerFn({ method: 'GET' }).handler(async () => {
+  const userId = await requireUserId()
+  const [apiKeySaved, scheduledSync, syncHistory] = await Promise.all([
+    hasApiKey(userId),
+    findScheduledSync(userId),
+    findSyncHistory(userId),
+  ])
+  return { hasApiKey: apiKeySaved, scheduledSync, syncHistory }
+})
 
 export const syncWeek = createServerFn({ method: 'POST' })
   .validator(syncSchema)
@@ -25,15 +42,17 @@ export const syncWeek = createServerFn({ method: 'POST' })
     // A week of slack for runners whose timezone is behind the server's.
     if (data.monday < addDaysTo(mondayOf(new Date()), -7))
       throw new Error('Pick the current week or later')
-    const apiKey = data.apiKey ?? (await findApiKey(userId))
-    if (!apiKey) throw new Error('Enter your intervals.icu API key')
 
-    const settings = await findPlanSettings(userId)
-    if (!settings) throw new Error('Save Plan Settings first')
-
-    const week = deriveWeek(settings, await findSessionChoices(userId))
-
-    await replaceManagedWorkouts(apiKey, data.monday, workouts(week, settings, data.monday))
+    await runSync(userId, data.monday, 'manual', data.apiKey)
 
     if (data.apiKey) await saveApiKey(userId, data.apiKey)
+  })
+
+export const saveScheduledSync = createServerFn({ method: 'POST' })
+  .validator(scheduledSyncSchema)
+  .handler(async ({ data }) => {
+    const userId = await requireUserId()
+    if (data.enabled && !(await hasApiKey(userId)))
+      throw new Error('Save your intervals.icu API key first')
+    await upsertScheduledSync(userId, data)
   })
