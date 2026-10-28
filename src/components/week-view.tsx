@@ -61,12 +61,7 @@ export function WeekView({
   onChooseSession: (weekday: Weekday, repFormat?: RepFormat) => void
 }) {
   const week = deriveWeek(settings, sessionChoices)
-  const [selected, setSelected] = useState(() =>
-    Math.max(
-      0,
-      week.days.findIndex((d) => d.type === 'subT'),
-    ),
-  )
+  const [selected, setSelected] = useState(() => (new Date().getDay() + 6) % 7)
   const day = week.days[selected]!
   return (
     <div className="flex flex-col gap-4">
