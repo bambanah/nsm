@@ -13,8 +13,12 @@ _Avoid_: Anonymous user, visitor, local user
 ### Planning
 
 **Plan Settings**:
-The persisted inputs from which every Week is derived: Weekly Duration, warm-up and cool-down length, a Day Preference per weekday, a Shuffle, and an optional 5K Time. With Session Choices, the only planning state the app stores.
+The persisted inputs from which every Week is derived: Weekly Duration, warm-up and cool-down length, a Day Preference per weekday, a Shuffle, and an optional 5K Time. With Session Choices, they form the Planning State.
 _Avoid_: Template, config, profile
+
+**Planning State**:
+A runner's Plan Settings together with their Session Choices: the only planning state the app stores, and everything a Week is derived from. It never holds a Session Choice that its Plan Settings would delete.
+_Avoid_: Plan, plan inputs
 
 **Weekly Duration**:
 The total running time budget for a Week, between 5 and 9 hours.

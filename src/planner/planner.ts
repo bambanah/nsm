@@ -96,28 +96,6 @@ export function deriveWeek(settings: PlanSettings, sessionChoices: SessionChoice
   throw new Error('Could not place the Sub-threshold Sessions on non-adjacent days')
 }
 
-export function deadSessionChoices<T extends SessionChoice>(
-  settings: PlanSettings,
-  sessionChoices: T[],
-): T[] {
-  const { days } = deriveWeek(settings)
-  return sessionChoices.filter(
-    (c) =>
-      days.find((d) => d.weekday === c.weekday)?.type !== 'subT' ||
-      exceedsSessionCap(c.repFormat, settings.weeklyDurationMinutes),
-  )
-}
-
-export function sessionChoiceError(settings: PlanSettings, choice: SessionChoice) {
-  const { repLength, reps, repMinutes } = choice.repFormat
-  const known = REP_FORMATS.some(
-    (f) => f.repLength === repLength && f.reps === reps && f.repMinutes === repMinutes,
-  )
-  if (!known) return 'Unknown Rep Format'
-  if (deadSessionChoices(settings, [choice]).length > 0)
-    return 'That Rep Format does not fit this day'
-}
-
 function planDays(
   settings: PlanSettings,
   repFormats: RepFormat[],

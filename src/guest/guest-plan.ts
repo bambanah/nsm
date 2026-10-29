@@ -1,25 +1,24 @@
-import { z } from 'zod'
-import { guestPlanSchema } from '@/planner/schemas'
+import { planningState, type PlanningState } from '@/planner/planning-state'
+import { planningStateSchema } from '@/planner/schemas'
 
 const KEY = 'guestPlan'
 
-export type GuestPlan = z.infer<typeof guestPlanSchema>
-
-export function loadGuestPlan(): GuestPlan | null {
+export function loadGuestPlanningState(): PlanningState | null {
   try {
-    return guestPlanSchema.parse(JSON.parse(localStorage.getItem(KEY) ?? 'null'))
+    const parsed = planningStateSchema.parse(JSON.parse(localStorage.getItem(KEY) ?? 'null'))
+    return planningState(parsed.settings, parsed.sessionChoices)
   } catch {
     return null
   }
 }
 
-export function saveGuestPlan(plan: GuestPlan) {
+export function saveGuestPlanningState(state: PlanningState) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(plan))
+    localStorage.setItem(KEY, JSON.stringify(state))
   } catch {}
 }
 
-export function clearGuestPlan() {
+export function clearGuestPlanningState() {
   try {
     localStorage.removeItem(KEY)
   } catch {}

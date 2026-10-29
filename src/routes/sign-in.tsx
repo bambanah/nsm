@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { authClient } from '@/auth/auth-client'
 import { getUser } from '@/auth/auth.functions'
-import { clearGuestPlan, loadGuestPlan } from '@/guest/guest-plan'
-import { adoptGuestPlan } from '@/plan-settings/plan-settings.functions'
+import { clearGuestPlanningState, loadGuestPlanningState } from '@/guest/guest-plan'
+import { adoptGuestPlanningState } from '@/plan-settings/plan-settings.functions'
 
 export const Route = createFileRoute('/sign-in')({
   beforeLoad: async () => {
@@ -31,14 +31,14 @@ function SignIn() {
       ? await authClient.signUp.email({ name: String(form.get('name')), email, password })
       : await authClient.signIn.email({ email, password })
     if (result.error) return setError(result.error.message)
-    const guestPlan = loadGuestPlan()
-    if (guestPlan) {
+    const guestState = loadGuestPlanningState()
+    if (guestState) {
       try {
-        await adoptGuestPlan({ data: guestPlan })
+        await adoptGuestPlanningState({ data: guestState })
       } catch (e) {
         return setError((e as Error).message)
       }
-      clearGuestPlan()
+      clearGuestPlanningState()
     }
     router.clearCache()
     await navigate({ to: '/' })
