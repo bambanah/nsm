@@ -86,24 +86,30 @@ This came out of an architecture review (candidate 1 of 5, the top recommendatio
 
   Delete the `deadSessionChoices` and `sessionChoiceError` assertions and tests. Keep the `deriveWeek` assertions in `planner.test.ts:257-277`, which cover `deriveWeek` ignoring dead and over-cap choices. Adjust `guest-plan.test.ts` only for the renames. No new e2e test: the race cannot happen once the route checks choices against the form settings.
 - No ADR: none of these choices is hard to reverse.
+- **Settled during implementation:**
+  - `deadSessionChoices` was folded into a private `sessionChoiceError` in `planning-state.ts`; `weekdaySchema` and `sessionChoiceSchema` are no longer exported, and a shared `repFormatSchema` backs `chooseSessionSchema`.
+  - The server's "Save Plan Settings first" guard is gone, because `chooseSession` saves the settings with the choice.
+  - `guest-plan.ts` keeps its filename.
+  - The step's grep check also matches the new names (`loadGuestPlanningState` contains `GuestPlan`); no old symbol is left.
+  - Shipped as PR #19 on `refactor/planning-state`.
 
 ## Steps
 
-- [ ] Add `src/planner/planning-state.ts`:
+- [x] Add `src/planner/planning-state.ts`:
   - export `type PlanningState = { settings: PlanSettings; sessionChoices: SessionChoice[] }`, `planningState` and `withSessionChoice` as decided;
   - move `deadSessionChoices` and `sessionChoiceError` in from `planner.ts`, unexported, or keep them in `planner.ts` without exports if that avoids a cycle.
-- [ ] Rename `guestPlanSchema` → `planningStateSchema` in `src/planner/schemas.ts`.
-- [ ] Write the two tests in `src/planner/planning-state.test.ts`. Remove the `deadSessionChoices`/`sessionChoiceError` tests and imports from `planner.test.ts`, keeping its `deriveWeek` assertions.
-- [ ] `src/guest/guest-plan.ts`:
+- [x] Rename `guestPlanSchema` → `planningStateSchema` in `src/planner/schemas.ts`.
+- [x] Write the two tests in `src/planner/planning-state.test.ts`. Remove the `deadSessionChoices`/`sessionChoiceError` tests and imports from `planner.test.ts`, keeping its `deriveWeek` assertions.
+- [x] `src/guest/guest-plan.ts`:
   - rename the functions and use `PlanningState`;
   - in `loadGuestPlanningState`, return `planningState(parsed.settings, parsed.sessionChoices)` inside the existing try;
   - keep the key `'guestPlan'`;
   - update `guest-plan.test.ts` for the renames.
-- [ ] Server:
+- [x] Server:
   - in `session-choices.server.ts`, replace `upsertSessionChoice`/`deleteSessionChoices`/`deleteDeadSessionChoices` with a `replaceSessionChoices(userId, choices, executor)`;
   - rewrite `savePlanSettings` and `adoptGuestPlan` (→ `adoptGuestPlanningState`) in `plan-settings.functions.ts` on top of `planningState`;
   - in `session-choices.functions.ts`, replace `setSessionChoice`/`deleteSessionChoice` with `chooseSession({settings, weekday, repFormat?})`, which needs a zod validator that extends `weekdaySchema` with `settings: planSettingsSchema` and an optional `repFormat`.
-- [ ] `src/routes/index.tsx`:
+- [x] `src/routes/index.tsx`:
   - the Guest debounce save calls `saveGuest(planningState(next, sessionChoices))`;
   - `chooseSession`:
     - Guests: `saveGuest(withSessionChoice(planningState(settings, sessionChoices), weekday, repFormat))`;
@@ -111,9 +117,9 @@ This came out of an architecture review (candidate 1 of 5, the top recommendatio
     - both paths share one try/catch that sets `actionError`;
   - delete `chooseGuestSession`, and drop the `deadSessionChoices`/`sessionChoiceError` imports;
   - rename `GuestPlan` usages.
-- [ ] `src/routes/sign-in.tsx`: use the renamed load, clear and adopt functions.
-- [ ] `grep -rn "deadSessionChoices\|sessionChoiceError\|GuestPlan\|guestPlanSchema\|setSessionChoice\|deleteSessionChoice" src e2e` should only find hits inside `src/planner/`.
-- [ ] Run `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`.
+- [x] `src/routes/sign-in.tsx`: use the renamed load, clear and adopt functions.
+- [x] `grep -rn "deadSessionChoices\|sessionChoiceError\|GuestPlan\|guestPlanSchema\|setSessionChoice\|deleteSessionChoice" src e2e` should only find hits inside `src/planner/`.
+- [x] Run `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`.
 
 ## Verification
 
