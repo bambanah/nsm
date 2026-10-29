@@ -15,24 +15,22 @@ import {
 import { WeekView } from '@/components/week-view'
 import { authClient } from '@/auth/auth-client'
 import { getUser } from '@/auth/auth.functions'
-import { loadGuestPlan, saveGuestPlan, type GuestPlan } from '@/guest/guest-plan'
+import { loadGuestPlanningState, saveGuestPlanningState } from '@/guest/guest-plan'
 import { getPlanSettings, savePlanSettings } from '@/plan-settings/plan-settings.functions'
 import { getSyncState } from '@/sync/sync.functions'
 import {
-  deleteSessionChoice,
+  chooseSession as chooseSignedInSession,
   getSessionChoices,
-  setSessionChoice,
 } from '@/session-choices/session-choices.functions'
 import {
-  deadSessionChoices,
   randomShuffle,
-  sessionChoiceError,
   WEEKDAYS,
   type DayPreference,
   type PlanSettings,
   type SessionChoice,
   type Weekday,
 } from '@/planner/planner'
+import { planningState, withSessionChoice, type PlanningState } from '@/planner/planning-state'
 import { REP_LENGTHS, type RepFormat } from '@/planner/rep-formats'
 import { formatDuration, formatRepPace, derivePaces } from '@/planner/rep-paces'
 import {
@@ -130,11 +128,11 @@ function Planner() {
   const { user } = Route.useRouteContext()
   const router = useRouter()
   const navigate = useNavigate()
-  const [guestPlan, setGuestPlan] = useState(() => (user ? null : loadGuestPlan()))
-  const saved = user ? loaded.settings : (guestPlan?.settings ?? null)
+  const [guestState, setGuestState] = useState(() => (user ? null : loadGuestPlanningState()))
+  const saved = user ? loaded.settings : (guestState?.settings ?? null)
   const sessionChoices = user
     ? loaded.sessionChoices
-    : (guestPlan?.sessionChoices ?? NO_SESSION_CHOICES)
+    : (guestState?.sessionChoices ?? NO_SESSION_CHOICES)
   const [initialForm] = useState<FormState>(() =>
     saved
       ? toForm(saved)
@@ -159,9 +157,9 @@ function Planner() {
   const update = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }))
 
   const saveGuest = useCallback(
-    (plan: GuestPlan) => {
-      saveGuestPlan(plan)
-      setGuestPlan(plan)
+    (state: PlanningState) => {
+      saveGuestPlanningState(state)
+      setGuestState(state)
       try {
         if (sessionStorage.getItem(GUEST_WARNED_KEY)) return
         sessionStorage.setItem(GUEST_WARNED_KEY, 'true')
@@ -179,13 +177,7 @@ function Planner() {
       return
     const timeout = setTimeout(async () => {
       setActionError(undefined)
-      if (!user) {
-        const dead = deadSessionChoices(next, sessionChoices)
-        return saveGuest({
-          settings: next,
-          sessionChoices: sessionChoices.filter((c) => !dead.includes(c)),
-        })
-      }
+      if (!user) return saveGuest(planningState(next, sessionChoices))
       try {
         await savePlanSettings({ data: next })
         await router.invalidate()
@@ -196,22 +188,14 @@ function Planner() {
     return () => clearTimeout(timeout)
   }, [form, baseline, sessionChoices, user, router, saveGuest])
 
-  const chooseGuestSession = (weekday: Weekday, repFormat?: RepFormat) => {
-    const others = sessionChoices.filter((c) => c.weekday !== weekday)
-    if (!repFormat) return saveGuest({ settings, sessionChoices: others })
-    const choice = { weekday, repFormat }
-    const error = sessionChoiceError(settings, choice)
-    if (error) return setActionError(error)
-    saveGuest({ settings, sessionChoices: [...others, choice] })
-  }
-
   const chooseSession = async (weekday: Weekday, repFormat?: RepFormat) => {
     setActionError(undefined)
-    if (!user) return chooseGuestSession(weekday, repFormat)
     try {
-      await (repFormat
-        ? setSessionChoice({ data: { weekday, repFormat } })
-        : deleteSessionChoice({ data: { weekday } }))
+      if (!user)
+        return saveGuest(
+          withSessionChoice(planningState(settings, sessionChoices), weekday, repFormat),
+        )
+      await chooseSignedInSession({ data: { settings, weekday, repFormat } })
       await router.invalidate()
     } catch (e) {
       setActionError((e as Error).message)

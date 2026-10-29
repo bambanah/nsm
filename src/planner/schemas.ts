@@ -14,19 +14,24 @@ export const planSettingsSchema = z.object({
   fiveKSeconds: z.number().nullable(),
 })
 
-export const weekdaySchema = z.object({
+const weekdaySchema = z.object({
   weekday: z.enum(WEEKDAYS),
 })
 
-export const sessionChoiceSchema = weekdaySchema.extend({
-  repFormat: z.object({
-    repLength: z.enum(REP_LENGTHS),
-    reps: z.int(),
-    repMinutes: z.int(),
-  }),
+const repFormatSchema = z.object({
+  repLength: z.enum(REP_LENGTHS),
+  reps: z.int(),
+  repMinutes: z.int(),
 })
 
-export const guestPlanSchema = z.object({
+const sessionChoiceSchema = weekdaySchema.extend({ repFormat: repFormatSchema })
+
+export const chooseSessionSchema = weekdaySchema.extend({
+  settings: planSettingsSchema,
+  repFormat: repFormatSchema.optional(),
+})
+
+export const planningStateSchema = z.object({
   settings: planSettingsSchema,
   sessionChoices: z.array(sessionChoiceSchema),
 })
