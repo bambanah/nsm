@@ -69,14 +69,14 @@ Researching the rules showed that several of them, inherited from threshold.work
 
 ## Steps
 
-- [ ] Planner: export named constants; Weekly Duration 300-540; remove `sessionCount` and the two-session branch (always 3); taper target above 420 min; drop the 25-min cap tier; Recovery by Rep Length in `toSession`; Long Run 1.7× solve with 75-105 clamp; closest-attempt fallback; mark merged Rest Days.
-- [ ] Validation: new duration bounds and message; SubT preference maximum is a fixed 3 (no `sessionCount`).
-- [ ] Update `planner.test.ts` and `validate.test.ts` to the new rules (durations, session count, caps, Long Run values, recoveries, taper, closest attempt, merged flag); test-first where practical.
-- [ ] UI: hours input `max={9}`; Week view unchanged otherwise until tooltips.
-- [ ] Add shadcn Popover and a small explained-term wrapper (dotted underline, hover + tap, "More →" link).
-- [ ] Add the tooltips listed above to `week-view.tsx` and the Day Preferences label in `index.tsx`.
-- [ ] Add a public `src/routes/how-it-works.tsx` (no auth `beforeLoad`) with the outline above, rendering numbers and the Rep Format table from planner exports, section ids matching the tooltip links; link it from the planner header.
-- [ ] Run `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm format`.
+- [x] Planner: export named constants; Weekly Duration 300-540; remove `sessionCount` and the two-session branch (always 3); taper target above 420 min; drop the 25-min cap tier; Recovery by Rep Length in `toSession`; Long Run 1.7× solve with 75-105 clamp; closest-attempt fallback; mark merged Rest Days.
+- [x] Validation: new duration bounds and message; SubT preference maximum is a fixed 3 (no `sessionCount`).
+- [x] Update `planner.test.ts` and `validate.test.ts` to the new rules (durations, session count, caps, Long Run values, recoveries, taper, closest attempt, merged flag); test-first where practical.
+- [x] UI: hours input `max={9}`; Week view unchanged otherwise until tooltips.
+- [x] Add shadcn Popover and a small explained-term wrapper (dotted underline, hover + tap, "More →" link).
+- [x] Add the tooltips listed above to `week-view.tsx` and the Day Preferences label in `index.tsx`.
+- [x] Add a public `src/routes/how-it-works.tsx` (no auth `beforeLoad`) with the outline above, rendering numbers and the Rep Format table from planner exports, section ids matching the tooltip links; link it from the planner header.
+- [x] Run `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm format`.
 
 ## Verification
 

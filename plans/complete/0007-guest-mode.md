@@ -54,17 +54,17 @@ All settled with the user; do not reopen.
 
 ## Steps
 
-- [ ] Move `planSettingsSchema` and `sessionChoiceSchema` out of the `.functions.ts` files into a module both the client and server import (e.g. next to the planner types), so the Guest store and the adoption server fn parse with the same schemas. Keep the server fns using them.
-- [ ] Add a Guest plan store module (e.g. `src/guest/guest-plan.ts`) with `load` (returns `{ settings, sessionChoices }` or `null`, zod-parsed, try/catch), `save` and `clear` for a single localStorage key. Unit-test parse failure → `null` and the round trip.
-- [ ] Factor the client-side Session Choice checks (known Rep Format via `REP_FORMATS`, `deadSessionChoices`) so the Guest path and the server path use the same function; on a Guest settings save, drop dead Session Choices as `deleteDeadSessionChoices` does.
-- [ ] `src/routes/index.tsx`: remove the `/sign-in` redirect. Loader returns `user` and, only when signed in, the server data; for a Guest return `settings: null, sessionChoices: [], hasApiKey: false` and skip the server fns. In `Home`, a Guest's saved state comes from the Guest store (in the `useState` initialiser) and autosave / `chooseSession` write to it instead of calling server fns. Keep one code path for the form and derivation; branch only at load and save.
-- [ ] Guest warning toast on the first saving change per browser session (Decision 4).
-- [ ] Header: add an opt-in "Sign in" button (link to `/sign-in`) for Guests on the planner; leave `/how-it-works` unchanged. Sign out navigates to `/` and the planner must reset to fresh Guest defaults (e.g. key `Home` by user id, or otherwise ensure state does not carry over).
-- [ ] Sync: pass whether the viewer is a Guest down to `SyncDialog` (or `WeekView`) and render the disabled button inside the hover/tap popover from Decision 5, extracting the shared popover behaviour from `Explained`.
-- [ ] Add a server fn (e.g. `adoptGuestPlan` in `src/plan-settings/plan-settings.functions.ts`) implementing Decision 6 in a single transaction; give `upsertSessionChoice` an `executor` parameter for it.
-- [ ] `src/routes/sign-in.tsx`: after a successful sign-in or sign-up, if the Guest store has a plan, call the adoption fn, then clear the store (Decision 7), then navigate to `/`. Add the "Continue without signing in" link to `/`.
-- [ ] e2e (`e2e/app.spec.ts` or a new spec) with an empty storage state: a Guest can open `/`, enter Plan Settings, see a Week, reload and still see it, sees the toast once, and finds Sync disabled. A Guest who signs up sees their plan as the account's plan and localStorage is empty. Signed-in runner tests continue to pass.
-- [ ] Run `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`.
+- [x] Move `planSettingsSchema` and `sessionChoiceSchema` out of the `.functions.ts` files into a module both the client and server import (e.g. next to the planner types), so the Guest store and the adoption server fn parse with the same schemas. Keep the server fns using them.
+- [x] Add a Guest plan store module (e.g. `src/guest/guest-plan.ts`) with `load` (returns `{ settings, sessionChoices }` or `null`, zod-parsed, try/catch), `save` and `clear` for a single localStorage key. Unit-test parse failure → `null` and the round trip.
+- [x] Factor the client-side Session Choice checks (known Rep Format via `REP_FORMATS`, `deadSessionChoices`) so the Guest path and the server path use the same function; on a Guest settings save, drop dead Session Choices as `deleteDeadSessionChoices` does.
+- [x] `src/routes/index.tsx`: remove the `/sign-in` redirect. Loader returns `user` and, only when signed in, the server data; for a Guest return `settings: null, sessionChoices: [], hasApiKey: false` and skip the server fns. In `Home`, a Guest's saved state comes from the Guest store (in the `useState` initialiser) and autosave / `chooseSession` write to it instead of calling server fns. Keep one code path for the form and derivation; branch only at load and save.
+- [x] Guest warning toast on the first saving change per browser session (Decision 4).
+- [x] Header: add an opt-in "Sign in" button (link to `/sign-in`) for Guests on the planner; leave `/how-it-works` unchanged. Sign out navigates to `/` and the planner must reset to fresh Guest defaults (e.g. key `Home` by user id, or otherwise ensure state does not carry over).
+- [x] Sync: pass whether the viewer is a Guest down to `SyncDialog` (or `WeekView`) and render the disabled button inside the hover/tap popover from Decision 5, extracting the shared popover behaviour from `Explained`.
+- [x] Add a server fn (e.g. `adoptGuestPlan` in `src/plan-settings/plan-settings.functions.ts`) implementing Decision 6 in a single transaction; give `upsertSessionChoice` an `executor` parameter for it.
+- [x] `src/routes/sign-in.tsx`: after a successful sign-in or sign-up, if the Guest store has a plan, call the adoption fn, then clear the store (Decision 7), then navigate to `/`. Add the "Continue without signing in" link to `/`.
+- [x] e2e (`e2e/app.spec.ts` or a new spec) with an empty storage state: a Guest can open `/`, enter Plan Settings, see a Week, reload and still see it, sees the toast once, and finds Sync disabled. A Guest who signs up sees their plan as the account's plan and localStorage is empty. Signed-in runner tests continue to pass.
+- [x] Run `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`.
 
 ## Verification
 

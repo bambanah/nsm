@@ -63,19 +63,19 @@ So: an optional 5K Time in Plan Settings, from which the app derives a Rep Pace 
 
 ## Steps
 
-- [ ] Add `src/planner/rep-paces.ts`: a function from 5K seconds to `Record<RepLength, { fast: number; slow: number }>` in s/km, using the Decisions formulas, plus a `m:ss` formatter. TDD it in `src/planner/rep-paces.test.ts` against these reference values (computed by the research agent and matching Lactrace's output; allow ±1 s, since Lactrace rounds speed to 0.01 km/h first):
+- [x] Add `src/planner/rep-paces.ts`: a function from 5K seconds to `Record<RepLength, { fast: number; slow: number }>` in s/km, using the Decisions formulas, plus a `m:ss` formatter. TDD it in `src/planner/rep-paces.test.ts` against these reference values (computed by the research agent and matching Lactrace's output; allow ±1 s, since Lactrace rounds speed to 0.01 km/h first):
   - 20:00 5K: VDOT ≈ 49.81; equivalent times 63:46, 1:31:50 and 2:13:38; ranges 15K 4:15-4:23, HM 4:21-4:29, 30K 4:27-4:35.
   - 25:00: fast ends 5:20, 5:27 and 5:34, each with a +10 s slow end.
   - 15:00: fast ends 3:11, 3:15 and 3:20.
-- [ ] Add `fiveKSeconds: number | null` to `PlanSettings`. Add a nullable integer column to `src/db/schema.ts`, run `pnpm db:generate`, and commit the generated migration (never hand-edit `drizzle/`). Select the column in `findPlanSettings`. Existing rows get null.
-- [ ] In `validate.ts`, add the `fiveKTime` error field and a check that `fiveKSeconds` is null or a positive integer, with the message e.g. "5K Time must be minutes and seconds, e.g. 19:45". Cover it in `validate.test.ts`. Update existing tests and fixtures that build `PlanSettings` to include `fiveKSeconds: null`.
-- [ ] In `index.tsx`:
+- [x] Add `fiveKSeconds: number | null` to `PlanSettings`. Add a nullable integer column to `src/db/schema.ts`, run `pnpm db:generate`, and commit the generated migration (never hand-edit `drizzle/`). Select the column in `findPlanSettings`. Existing rows get null.
+- [x] In `validate.ts`, add the `fiveKTime` error field and a check that `fiveKSeconds` is null or a positive integer, with the message e.g. "5K Time must be minutes and seconds, e.g. 19:45". Cover it in `validate.test.ts`. Update existing tests and fixtures that build `PlanSettings` to include `fiveKSeconds: null`.
+- [x] In `index.tsx`:
   - Add a `fiveKTime` string to `FormState`. `toForm` formats it from seconds, `toSettings` parses it (empty means null, malformed means NaN so validation catches it), and `samePlanSettings` compares it.
   - Add a 5K Time `Field` with a text input in the expanded section.
   - Add the paces to the collapsed summary when a 5K Time is set.
-- [ ] Thread the Rep Paces to `WeekView` (e.g. pass `repPaces` or the 5K Time alongside `week`; the implementer's choice, keeping `deriveWeek` free of paces unless that is clearly simpler). Show the Rep Pace on the breakdown's rep rows and in the footer when present.
-- [ ] Rewrite the `Pacing` section in `how-it-works.tsx` as described in Decisions. Render the numbers (3%, 10 s, 5:00/km cutoff) from constants exported by `rep-paces.ts` so the page cannot drift.
-- [ ] Run `pnpm format`, `pnpm lint`, `pnpm typecheck` and `pnpm test`.
+- [x] Thread the Rep Paces to `WeekView` (e.g. pass `repPaces` or the 5K Time alongside `week`; the implementer's choice, keeping `deriveWeek` free of paces unless that is clearly simpler). Show the Rep Pace on the breakdown's rep rows and in the footer when present.
+- [x] Rewrite the `Pacing` section in `how-it-works.tsx` as described in Decisions. Render the numbers (3%, 10 s, 5:00/km cutoff) from constants exported by `rep-paces.ts` so the page cannot drift.
+- [x] Run `pnpm format`, `pnpm lint`, `pnpm typecheck` and `pnpm test`.
 
 ## Verification
 

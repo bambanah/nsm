@@ -49,28 +49,28 @@ So: on any Sub-threshold day of a Week, the runner can replace the planner's Rep
 
 ## Steps
 
-- [ ] Extract the cap check into an exported helper in `planner.ts`, e.g. `exceedsSessionCap(repFormat, weeklyDurationMinutes)`, and use it in `selectRepFormats`.
-- [ ] Add a `SessionChoice` type (`{ weekday: Weekday; repFormat: RepFormat }`) and an optional `sessionChoices: SessionChoice[]` parameter to `deriveWeek`. Apply the choices per the Decisions above. Add the planner's own format to the subT day (e.g. `session.plannerRepFormat`, or a field on the `Day`) so the UI can label the planner option. Ignore choices for non-subT days or over-cap formats.
-- [ ] Add an exported pure function that returns the Session Choices that no longer apply for given settings and a Week's choices (used by the sweep). Write tests in `planner.test.ts`:
+- [x] Extract the cap check into an exported helper in `planner.ts`, e.g. `exceedsSessionCap(repFormat, weeklyDurationMinutes)`, and use it in `selectRepFormats`.
+- [x] Add a `SessionChoice` type (`{ weekday: Weekday; repFormat: RepFormat }`) and an optional `sessionChoices: SessionChoice[]` parameter to `deriveWeek`. Apply the choices per the Decisions above. Add the planner's own format to the subT day (e.g. `session.plannerRepFormat`, or a field on the `Day`) so the UI can label the planner option. Ignore choices for non-subT days or over-cap formats.
+- [x] Add an exported pure function that returns the Session Choices that no longer apply for given settings and a Week's choices (used by the sweep). Write tests in `planner.test.ts`:
   - with no choices the Week is unchanged;
   - a choice replaces only its day's session, and Recovery follows the chosen Rep Length;
   - the other sessions and the Sub-threshold days are unchanged;
   - total minutes still match the Weekly Duration as before;
   - choices on non-subT days and over-cap choices are ignored and reported as dead.
-- [ ] Add a `session_choices` table in `src/db/schema.ts`: `userId` (FK to user, cascade), `monday` (text `YYYY-MM-DD`, matching how Mondays are passed today), `weekday`, `repLength`, `reps`, `repMinutes`, `updatedAt`, primary key (`userId`, `monday`, `weekday`). Run `pnpm db:generate`.
-- [ ] Add `src/session-choices/session-choices.server.ts` (find by user, upsert, delete one, delete many) and `session-choices.functions.ts` with server fns, following the plan-settings pattern:
+- [x] Add a `session_choices` table in `src/db/schema.ts`: `userId` (FK to user, cascade), `monday` (text `YYYY-MM-DD`, matching how Mondays are passed today), `weekday`, `repLength`, `reps`, `repMinutes`, `updatedAt`, primary key (`userId`, `monday`, `weekday`). Run `pnpm db:generate`.
+- [x] Add `src/session-choices/session-choices.server.ts` (find by user, upsert, delete one, delete many) and `session-choices.functions.ts` with server fns, following the plan-settings pattern:
   - `getSessionChoices`: all of the user's choices, or only the Mondays shown.
   - `setSessionChoice({ monday, weekday, repFormat })`: zod-validate; reject if the format isn't in `REP_FORMATS`, there are no saved Plan Settings, the day isn't a Sub-threshold Session in `deriveWeek(saved settings, monday)`, or the format exceeds the cap.
   - `deleteSessionChoice({ monday, weekday })`.
-- [ ] In `savePlanSettings`, after the upsert, load the user's Session Choices, group them by Monday, find the dead ones with the new settings, and delete them (in one transaction with the upsert if Drizzle allows it simply).
-- [ ] In `src/routes/index.tsx`, load Session Choices alongside Plan Settings in the loader. Pass each Week's choices into `deriveWeek` in `Weeks`. Pass set and clear callbacks into `WeekView` that call the server fns and then `router.invalidate()`.
-- [ ] In `week-view.tsx`, put a `Select` in the `DayBreakdown` title for subT days:
+- [x] In `savePlanSettings`, after the upsert, load the user's Session Choices, group them by Monday, find the dead ones with the new settings, and delete them (in one transaction with the upsert if Drizzle allows it simply).
+- [x] In `src/routes/index.tsx`, load Session Choices alongside Plan Settings in the loader. Pass each Week's choices into `deriveWeek` in `Weeks`. Pass set and clear callbacks into `WeekView` that call the server fns and then `router.invalidate()`.
+- [x] In `week-view.tsx`, put a `Select` in the `DayBreakdown` title for subT days:
   - first item is the planner's format with "(planner)", which clears the choice;
   - then all `REP_FORMATS` grouped by Rep Length, each showing `reps×repMinutes′ @RepLength` and the Week's share with that pick (derive the Week with that hypothetical choice and read `subThresholdPercent`);
   - over-cap items are disabled with the reason.
   - `WeekView` will need the settings and the Week's choices, or a function that derives a hypothetical Week, to compute per-option shares.
-- [ ] Fix `docs/research/nsm-rationale.md` line 112: move the one long / medium / short template out of "Supported" and say the sources agree with it but don't require it; one-of-each comes from threshold.works and is a planner choice.
-- [ ] Run `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
+- [x] Fix `docs/research/nsm-rationale.md` line 112: move the one long / medium / short template out of "Supported" and say the sources agree with it but don't require it; one-of-each comes from threshold.works and is a planner choice.
+- [x] Run `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
 
 ## Verification
 
