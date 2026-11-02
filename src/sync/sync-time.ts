@@ -23,6 +23,11 @@ export function latestSyncTime(weekday: Weekday, hour: number, timeZone: string,
   return new Date(+(syncTime > now ? syncTimeDaysAgo(daysBack + 7) : syncTime))
 }
 
+export function nextSyncTime(weekday: Weekday, hour: number, timeZone: string, now: Date) {
+  const latest = new TZDate(latestSyncTime(weekday, hour, timeZone, now), timeZone)
+  return new Date(+addDays(latest, 7))
+}
+
 export function targetMonday(syncTime: Date, timeZone: string) {
   const local = new TZDate(syncTime, timeZone)
   return isoDate(addDays(local, (8 - local.getDay()) % 7))

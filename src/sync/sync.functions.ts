@@ -4,7 +4,13 @@ import { requireUserId } from '@/auth/auth.server'
 import { addDaysTo, mondayOf, parseDate } from '@/lib/week-dates'
 import { WEEKDAYS } from '@/planner/planner'
 import { hasApiKey, saveApiKey } from './intervals-connection.server'
-import { findScheduledSync, findSyncHistory, runSync, upsertScheduledSync } from './sync.server'
+import {
+  findLastSucceededSync,
+  findScheduledSync,
+  findSyncHistory,
+  runSync,
+  upsertScheduledSync,
+} from './sync.server'
 
 const syncSchema = z.object({
   monday: z.iso.date().refine((d) => parseDate(d).getDay() === 1, 'Not a Monday'),
@@ -27,12 +33,13 @@ const scheduledSyncSchema = z.object({
 
 export const getSyncState = createServerFn({ method: 'GET' }).handler(async () => {
   const userId = await requireUserId()
-  const [apiKeySaved, scheduledSync, syncHistory] = await Promise.all([
+  const [apiKeySaved, scheduledSync, syncHistory, lastSync] = await Promise.all([
     hasApiKey(userId),
     findScheduledSync(userId),
     findSyncHistory(userId),
+    findLastSucceededSync(userId),
   ])
-  return { hasApiKey: apiKeySaved, scheduledSync, syncHistory }
+  return { hasApiKey: apiKeySaved, scheduledSync, syncHistory, lastSync }
 })
 
 export const syncWeek = createServerFn({ method: 'POST' })

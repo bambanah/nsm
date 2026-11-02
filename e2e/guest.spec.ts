@@ -46,7 +46,9 @@ test('a Guest plans a Week that survives a reload', async ({ page }) => {
 
 test('a Guest cannot Sync', async ({ page }) => {
   await planAWeek(page)
-  const sync = page.getByRole('button', { name: 'Sync to intervals.icu' })
+  // The toast sits over the Sync section at the bottom of the page.
+  await expect(page.getByText(TOAST)).toHaveCount(0, { timeout: 10_000 })
+  const sync = page.getByRole('button', { name: 'Sync now' })
   await expect(sync).toBeDisabled()
   await sync.hover({ force: true })
   await expect(page.getByText('to Sync to intervals.icu')).toBeVisible()
