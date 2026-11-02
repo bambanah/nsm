@@ -1,15 +1,11 @@
-import { addDaysTo } from '@/lib/week-dates'
+import { addDaysTo, isoDate } from '@/lib/week-dates'
 import { EXTERNAL_ID_PREFIX, type Workout } from './workouts'
 
 const EVENTS_URL = 'https://intervals.icu/api/v1/athlete/0/events'
 
-export async function replaceManagedWorkouts(
-  apiKey: string,
-  monday: string,
-  workouts: Workout[],
-  fetchFn: typeof fetch = fetch,
-) {
-  const request = async (method: string, url: string, body?: unknown) => {
+const requester =
+  (apiKey: string, fetchFn: typeof fetch) =>
+  async (method: string, url: string, body?: unknown) => {
     const response = await fetchFn(url, {
       method,
       headers: {
@@ -23,6 +19,19 @@ export async function replaceManagedWorkouts(
       throw new Error(`intervals.icu failed (${response.status}): ${await response.text()}`)
     return response
   }
+
+export async function checkApiKey(apiKey: string, fetchFn: typeof fetch = fetch) {
+  const today = isoDate(new Date())
+  await requester(apiKey, fetchFn)('GET', `${EVENTS_URL}?oldest=${today}&newest=${today}`)
+}
+
+export async function replaceManagedWorkouts(
+  apiKey: string,
+  monday: string,
+  workouts: Workout[],
+  fetchFn: typeof fetch = fetch,
+) {
+  const request = requester(apiKey, fetchFn)
 
   const listed = await request(
     'GET',

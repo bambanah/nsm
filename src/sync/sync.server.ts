@@ -29,10 +29,10 @@ const record = (
   error?: string,
 ) => db.insert(syncRecords).values({ userId, ranAt: new Date(), monday, trigger, outcome, error })
 
-export async function runSync(userId: string, monday: string, trigger: Trigger, apiKey?: string) {
+export async function runSync(userId: string, monday: string, trigger: Trigger) {
   try {
-    const key = apiKey ?? (await findApiKey(userId))
-    if (!key) throw new Error('Enter your intervals.icu API key')
+    const key = await findApiKey(userId)
+    if (!key) throw new Error('Save your intervals.icu API key')
 
     const settings = await findPlanSettings(userId)
     if (!settings) throw new Error('Save Plan Settings first')

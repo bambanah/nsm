@@ -13,8 +13,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { format } from 'date-fns'
 import { addDaysTo, mondayOf, parseDate, weekLabel } from '@/lib/week-dates'
 import { DAY_TYPE_LABELS, WEEKDAYS, type Week } from '@/planner/planner'
@@ -40,12 +38,10 @@ const selectedWeek = (monday?: string) =>
 
 export function SyncDialog({
   week,
-  hasApiKey,
   disabled,
   isGuest,
 }: {
   week: Week
-  hasApiKey: boolean
   disabled: boolean
   isGuest: boolean
 }) {
@@ -53,20 +49,13 @@ export function SyncDialog({
   const [open, setOpen] = useState(false)
   const [monday, setMonday] = useState<string>()
   const [hovered, setHovered] = useState<string>()
-  const [changingKey, setChangingKey] = useState(false)
-  const [apiKey, setApiKey] = useState('')
   const [error, setError] = useState<string>()
   const [syncing, setSyncing] = useState(false)
   const [currentMonday] = useState(() => mondayOf(new Date()))
 
-  const showKeyField = !hasApiKey || changingKey
-
   const onOpenChange = (next: boolean) => {
     setOpen(next)
-    if (next) return
-    setChangingKey(false)
-    setApiKey('')
-    setError(undefined)
+    if (!next) setError(undefined)
   }
 
   const sync = async () => {
@@ -74,7 +63,7 @@ export function SyncDialog({
     setSyncing(true)
     setError(undefined)
     try {
-      await syncWeek({ data: { monday, apiKey: showKeyField ? apiKey : undefined } })
+      await syncWeek({ data: { monday } })
       toast.success(`Synced to ${weekLabel(monday)}`)
       onOpenChange(false)
     } catch (e) {
@@ -134,38 +123,12 @@ export function SyncDialog({
         />
         <p className="font-semibold">{monday ? weekLabel(monday) : 'Pick a week'}</p>
         {monday && <Activities week={week} monday={monday} />}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="intervals-api-key">intervals.icu API key</Label>
-          {showKeyField ? (
-            <Input
-              id="intervals-api-key"
-              type="password"
-              autoComplete="off"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
-          ) : (
-            <p className="text-muted-foreground">
-              Saved ·{' '}
-              <button
-                type="button"
-                className="font-semibold text-primary hover:underline"
-                onClick={() => setChangingKey(true)}
-              >
-                Change
-              </button>
-            </p>
-          )}
-        </div>
         {error && <p className="text-destructive">{error}</p>}
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
-          <Button
-            onClick={sync}
-            disabled={!monday || (showKeyField && apiKey.trim() === '') || syncing}
-          >
+          <Button onClick={sync} disabled={!monday || syncing}>
             Sync
           </Button>
         </DialogFooter>

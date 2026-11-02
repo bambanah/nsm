@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { replaceManagedWorkouts } from './intervals.server'
+import { checkApiKey, replaceManagedWorkouts } from './intervals.server'
 import type { Workout } from './workouts'
 
 const workout: Workout = {
@@ -85,5 +85,20 @@ describe('replaceManagedWorkouts', () => {
       'intervals.icu failed (422): Invalid workout',
     )
     expect(calls).toHaveLength(3)
+  })
+})
+
+describe('checkApiKey', () => {
+  it('makes one read-only request with the key', async () => {
+    const { fetch, calls } = fakeFetch(() => Response.json([]))
+    await checkApiKey('key', fetch)
+    expect(calls).toEqual([
+      expect.objectContaining({ method: 'GET', auth: `Basic ${btoa('API_KEY:key')}` }),
+    ])
+  })
+
+  it('reports a rejected API key', async () => {
+    const { fetch } = fakeFetch(() => new Response('Unauthorized', { status: 401 }))
+    await expect(checkApiKey('bad', fetch)).rejects.toThrow('intervals.icu rejected the API key')
   })
 })

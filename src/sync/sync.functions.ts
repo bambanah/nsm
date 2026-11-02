@@ -4,6 +4,7 @@ import { requireUserId } from '@/auth/auth.server'
 import { addDaysTo, mondayOf, parseDate } from '@/lib/week-dates'
 import { WEEKDAYS } from '@/planner/planner'
 import { hasApiKey, saveApiKey } from './intervals-connection.server'
+import { checkApiKey } from './intervals.server'
 import {
   findLastSucceededSync,
   findScheduledSync,
@@ -14,8 +15,9 @@ import {
 
 const syncSchema = z.object({
   monday: z.iso.date().refine((d) => parseDate(d).getDay() === 1, 'Not a Monday'),
-  apiKey: z.string().trim().min(1).optional(),
 })
+
+const apiKeySchema = z.object({ apiKey: z.string().trim().min(1) })
 
 const scheduledSyncSchema = z.object({
   enabled: z.boolean(),
@@ -50,9 +52,15 @@ export const syncWeek = createServerFn({ method: 'POST' })
     if (data.monday < addDaysTo(mondayOf(new Date()), -7))
       throw new Error('Pick the current week or later')
 
-    await runSync(userId, data.monday, 'manual', data.apiKey)
+    await runSync(userId, data.monday, 'manual')
+  })
 
-    if (data.apiKey) await saveApiKey(userId, data.apiKey)
+export const saveIntervalsApiKey = createServerFn({ method: 'POST' })
+  .validator(apiKeySchema)
+  .handler(async ({ data }) => {
+    const userId = await requireUserId()
+    await checkApiKey(data.apiKey)
+    await saveApiKey(userId, data.apiKey)
   })
 
 export const saveScheduledSync = createServerFn({ method: 'POST' })
