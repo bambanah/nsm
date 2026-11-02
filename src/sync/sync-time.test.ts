@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { latestSyncTime, targetMonday } from './sync-time'
+import { latestSyncTime, nextSyncTime, targetMonday } from './sync-time'
 
 describe('latestSyncTime', () => {
   // Wednesday 28 Oct 2026, 10:00 in Melbourne (UTC+11)
@@ -44,6 +44,34 @@ describe('latestSyncTime', () => {
     const now = new Date('2026-04-05T23:00:00Z')
     expect(latestSyncTime('saturday', 18, 'Australia/Melbourne', now)).toEqual(
       new Date('2026-04-04T07:00:00Z'),
+    )
+  })
+})
+
+describe('nextSyncTime', () => {
+  // Wednesday 28 Oct 2026, 10:00 in Melbourne (UTC+11)
+  const wednesdayMorning = new Date('2026-10-27T23:00:00Z')
+
+  it('finds the next Sync Time later in the week', () => {
+    expect(nextSyncTime('sunday', 18, 'Australia/Melbourne', wednesdayMorning)).toEqual(
+      new Date('2026-11-01T07:00:00Z'),
+    )
+  })
+
+  it('goes forward a week when the Sync Time is exactly now', () => {
+    expect(nextSyncTime('wednesday', 10, 'Australia/Melbourne', wednesdayMorning)).toEqual(
+      new Date('2026-11-03T23:00:00Z'),
+    )
+  })
+
+  it('keeps the local hour across the start of daylight saving', () => {
+    // Thursday 1 Oct 2026 in Melbourne, before clocks go forward on Sunday 4 Oct
+    const now = new Date('2026-09-30T23:00:00Z')
+    expect(nextSyncTime('saturday', 18, 'Australia/Melbourne', now)).toEqual(
+      new Date('2026-10-03T08:00:00Z'),
+    )
+    expect(nextSyncTime('monday', 18, 'Australia/Melbourne', now)).toEqual(
+      new Date('2026-10-05T07:00:00Z'),
     )
   })
 })

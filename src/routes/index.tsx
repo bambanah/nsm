@@ -48,7 +48,7 @@ export const Route = createFileRoute('/')({
       return {
         settings: null,
         sessionChoices: [],
-        syncState: { hasApiKey: false, scheduledSync: null, syncHistory: [] },
+        syncState: { hasApiKey: false, scheduledSync: null, syncHistory: [], lastSync: null },
       }
     const [settings, sessionChoices, syncState] = await Promise.all([
       getPlanSettings(),

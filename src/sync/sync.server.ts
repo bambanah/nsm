@@ -90,6 +90,18 @@ export async function upsertScheduledSync(userId: string, scheduledSync: Schedul
     .onConflictDoUpdate({ target: scheduledSyncs.userId, set: values })
 }
 
+export async function findLastSucceededSync(
+  userId: string,
+): Promise<{ ranAt: Date; monday: string } | null> {
+  const [row] = await db
+    .select({ ranAt: syncRecords.ranAt, monday: syncRecords.monday })
+    .from(syncRecords)
+    .where(and(eq(syncRecords.userId, userId), eq(syncRecords.outcome, 'succeeded')))
+    .orderBy(desc(syncRecords.ranAt), desc(syncRecords.id))
+    .limit(1)
+  return row ?? null
+}
+
 export function findSyncHistory(userId: string) {
   return db
     .select({

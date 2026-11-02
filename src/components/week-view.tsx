@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ShuffleIcon } from 'lucide-react'
 import { cn } from 'cn'
 import { Explained } from '@/components/explained'
-import { SyncDialog, type SyncState } from '@/components/sync-dialog'
+import { SyncSection, type SyncState } from '@/components/sync-section'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -65,7 +65,7 @@ export function WeekView({
   const day = week.days[selected]!
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-[repeat(4,auto)_1fr]">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
         <Stat label="Total" value={clock(week.totalMinutes)} detail={`${week.totalMinutes} min`} />
         <Stat
           label={
@@ -111,9 +111,6 @@ export function WeekView({
         >
           <ShareBar week={week} />
         </Stat>
-        <div className="col-span-2 flex items-center justify-end gap-2 bg-card px-4 py-2.5 sm:col-span-1">
-          <SyncDialog week={week} syncState={syncState} disabled={syncDisabled} isGuest={isGuest} />
-        </div>
       </div>
       <section className="rounded-lg border bg-card p-4 flex flex-col gap-4">
         <header className="flex items-start gap-4">
@@ -147,6 +144,7 @@ export function WeekView({
           )
         }
       />
+      <SyncSection week={week} syncState={syncState} disabled={syncDisabled} isGuest={isGuest} />
     </div>
   )
 }
