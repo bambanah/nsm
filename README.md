@@ -16,7 +16,7 @@ Plans a Norwegian Singles Method running week from Plan Settings and Syncs it to
 Requires Node 24 and pnpm.
 
 ```sh
-docker run -d --name nsm-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=nsm -p 5434:5432 postgres:18
+pnpm db:up
 cp .env.example .env   # then fill in BETTER_AUTH_SECRET and INTERVALS_KEY_SECRET
 pnpm install
 pnpm db:migrate
