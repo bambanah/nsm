@@ -1,17 +1,22 @@
 import { expect, test, type Page } from '@playwright/test'
 
 test.use({ storageState: { cookies: [], origins: [] } })
+test.beforeEach(({ page }) => page.clock.setFixedTime(new Date('2026-11-06T12:00:00Z')))
 
 const TOAST = 'Saved on this device only. Sign in to plan from other devices.'
 
 const chosenSession = (page: Page) =>
   page.getByRole('combobox').filter({ hasText: '2×10′ @30K', hasNotText: '(planner)' })
 
+const selectSubTDay = (page: Page) =>
+  page.getByRole('button', { name: /Sub-threshold/ }).first().click()
+
 async function planAWeek(page: Page) {
   await page.goto('/')
   await page.getByLabel('Weekly Duration hours').fill('7')
   await page.getByLabel('5K Time').fill('19:45')
   await expect(page.getByText(TOAST)).toBeVisible()
+  await selectSubTDay(page)
   await page.getByRole('combobox').filter({ hasText: '(planner)' }).click()
   await page.getByRole('option', { name: /^2×10′ @30K/ }).click()
   await expect(chosenSession(page)).toBeVisible()
@@ -37,6 +42,7 @@ test('a Guest plans a Week that survives a reload', async ({ page }) => {
   await page.reload()
   await expect(page.getByLabel('Weekly Duration hours')).toHaveValue('7')
   await expect(page.getByLabel('5K Time')).toHaveValue('19:45')
+  await selectSubTDay(page)
   await expect(chosenSession(page)).toBeVisible()
 
   await page.getByRole('button', { name: 'Reshuffle' }).click()
@@ -67,6 +73,7 @@ test("a Guest who signs up keeps their plan as the account's plan", async ({ pag
   expect(await guestPlan(page)).toBeNull()
   await page.reload()
   await expect(page.getByLabel('Weekly Duration hours')).toHaveValue('7')
+  await selectSubTDay(page)
   await expect(chosenSession(page)).toBeVisible()
 
   await page.getByRole('button', { name: 'Sign out' }).click()
@@ -93,5 +100,6 @@ test('signing out and back in shows the account plan', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
   await expect(page.getByLabel('Weekly Duration hours')).toHaveValue('7')
   await expect(page.getByLabel('5K Time')).toHaveValue('19:45')
+  await selectSubTDay(page)
   await expect(chosenSession(page)).toBeVisible()
 })
