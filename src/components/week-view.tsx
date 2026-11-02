@@ -112,6 +112,15 @@ export function WeekView({
           <ShareBar week={week} />
         </Stat>
         <div className="col-span-2 flex items-center justify-end gap-2 bg-card px-4 py-2.5 sm:col-span-1">
+          <SyncDialog week={week} syncState={syncState} disabled={syncDisabled} isGuest={isGuest} />
+        </div>
+      </div>
+      <section className="rounded-lg border bg-card p-4 flex flex-col gap-4">
+        <header className="flex items-start gap-4">
+          <div className="flex flex-col gap-1 flex-1">
+            <h2 className="font-bold">Weekly load</h2>
+            <Legend />
+          </div>
           <Button
             variant="secondary"
             size="icon"
@@ -121,13 +130,6 @@ export function WeekView({
           >
             <ShuffleIcon />
           </Button>
-          <SyncDialog week={week} syncState={syncState} disabled={syncDisabled} isGuest={isGuest} />
-        </div>
-      </div>
-      <section className="rounded-lg border bg-card p-4">
-        <header className="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <h2 className="font-bold">Weekly load</h2>
-          <Legend />
         </header>
         <LoadChart days={week.days} selected={selected} onSelect={setSelected} />
       </section>
