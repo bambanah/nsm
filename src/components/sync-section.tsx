@@ -4,6 +4,8 @@ import { format, formatDistanceToNow } from 'date-fns'
 import { CircleAlertIcon, CircleCheckIcon, HistoryIcon } from 'lucide-react'
 import { cn } from 'cn'
 import { SyncDialog } from '@/components/sync-dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -15,7 +17,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { weekLabel } from '@/lib/week-dates'
 import { WEEKDAYS, type Week, type Weekday } from '@/planner/planner'
-import { getSyncState, saveScheduledSync } from '@/sync/sync.functions'
+import { getSyncState, saveIntervalsApiKey, saveScheduledSync } from '@/sync/sync.functions'
 import { nextSyncTime } from '@/sync/sync-time'
 
 export type SyncState = Awaited<ReturnType<typeof getSyncState>>
@@ -93,11 +95,14 @@ export function SyncSection({
             </p>
           )}
         </div>
-        <SyncDialog week={week} hasApiKey={hasApiKey} disabled={disabled} isGuest={isGuest} />
+        <SyncDialog week={week} disabled={disabled || !hasApiKey} isGuest={isGuest} />
       </header>
       {!isGuest && (
         <div className="grid border-t md:grid-cols-[minmax(0,20rem)_1fr] md:divide-x">
-          <ScheduledSyncSection scheduledSync={scheduledSync} hasApiKey={hasApiKey} />
+          <div>
+            <ScheduledSyncSection scheduledSync={scheduledSync} hasApiKey={hasApiKey} />
+            <ApiKeySection hasApiKey={hasApiKey} />
+          </div>
           <SyncHistory records={syncHistory} />
         </div>
       )}
@@ -148,9 +153,6 @@ function ScheduledSyncSection({
         />
         <Label htmlFor="scheduled-sync">Scheduled Sync</Label>
       </div>
-      {!hasApiKey && (
-        <p className="text-muted-foreground">Save an intervals.icu API key to turn it on.</p>
-      )}
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="text-muted-foreground">Every</span>
         <Select
@@ -188,6 +190,77 @@ function ScheduledSyncSection({
         </Select>
         <span className="text-muted-foreground">{form.timeZone}</span>
       </div>
+      {error && <p className="text-destructive">{error}</p>}
+    </section>
+  )
+}
+
+function ApiKeySection({ hasApiKey }: { hasApiKey: boolean }) {
+  const router = useRouter()
+  const [changing, setChanging] = useState(false)
+  const [apiKey, setApiKey] = useState('')
+  const [error, setError] = useState<string>()
+  const [saving, setSaving] = useState(false)
+
+  const stopChanging = () => {
+    setChanging(false)
+    setApiKey('')
+    setError(undefined)
+  }
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    setError(undefined)
+    try {
+      await saveIntervalsApiKey({ data: { apiKey } })
+      await router.invalidate()
+      stopChanging()
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-2 border-t p-4">
+      <Label htmlFor="intervals-api-key">intervals.icu API key</Label>
+      {hasApiKey && !changing ? (
+        <p className="text-muted-foreground">
+          Saved ·{' '}
+          <button
+            type="button"
+            className="font-semibold text-primary hover:underline"
+            onClick={() => setChanging(true)}
+          >
+            Change
+          </button>
+        </p>
+      ) : (
+        <form onSubmit={save} className="flex gap-2">
+          <Input
+            id="intervals-api-key"
+            type="password"
+            autoComplete="off"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+          />
+          <Button type="submit" variant="secondary" disabled={apiKey.trim() === '' || saving}>
+            Save
+          </Button>
+          {changing && (
+            <Button type="button" variant="ghost" onClick={stopChanging}>
+              Cancel
+            </Button>
+          )}
+        </form>
+      )}
+      {!hasApiKey && (
+        <p className="text-muted-foreground">
+          Save your key to Sync now or turn on Scheduled Sync.
+        </p>
+      )}
       {error && <p className="text-destructive">{error}</p>}
     </section>
   )

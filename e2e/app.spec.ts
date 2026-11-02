@@ -65,7 +65,7 @@ test('a failed manual Sync appears in the Sync History', async ({ page }) => {
     .first()
     .dispatchEvent('click')
   await dialog.getByRole('button', { name: 'Sync', exact: true }).click()
-  await expect(dialog.getByText('Enter your intervals.icu API key')).toBeVisible()
+  await expect(dialog.getByText('Save your intervals.icu API key')).toBeVisible()
   await page.keyboard.press('Escape')
 
   await expect(page.getByText(/^Last attempt failed/)).toBeVisible()
@@ -73,5 +73,5 @@ test('a failed manual Sync appears in the Sync History', async ({ page }) => {
   const latest = page.getByRole('table', { name: 'Sync History' }).getByRole('row').nth(1)
   await expect(latest).toContainText('Manual')
   await expect(latest).toContainText('Failed')
-  await expect(latest).toContainText('Enter your intervals.icu API key')
+  await expect(latest).toContainText('Save your intervals.icu API key')
 })
