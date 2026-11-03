@@ -1,7 +1,7 @@
 FROM node:24-slim AS base
 RUN corepack enable
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 FROM base AS build
 RUN pnpm install --frozen-lockfile
