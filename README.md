@@ -13,7 +13,7 @@ Plans a Norwegian Singles Method running week from Plan Settings and Syncs it to
 
 ## Local development
 
-Requires Node 24 and pnpm.
+Requires Node 26 and pnpm.
 
 ```sh
 pnpm db:up

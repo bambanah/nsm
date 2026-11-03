@@ -1,5 +1,5 @@
-FROM node:24-slim AS base
-RUN corepack enable
+FROM node:26-slim AS base
+RUN npm install -g corepack && corepack enable
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
