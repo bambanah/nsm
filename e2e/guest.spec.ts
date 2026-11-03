@@ -9,7 +9,7 @@ const chosenSession = (page: Page) =>
   page.getByRole('combobox').filter({ hasText: '2×10′ @30K', hasNotText: '(planner)' })
 
 const selectSubTDay = (page: Page) =>
-  page.getByRole('button', { name: /Sub-threshold/ }).first().click()
+  page.getByRole('listitem').getByRole('button', { name: /Sub-threshold/ }).first().click()
 
 async function planAWeek(page: Page) {
   await page.goto('/')
