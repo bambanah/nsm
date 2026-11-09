@@ -43,9 +43,11 @@ test('Scheduled Sync stays on or off across a reload and keeps its Sync Time', a
   await page.waitForLoadState('networkidle')
 
   await openPlannedWeek(page)
+  await expect(page.getByText(/· Next Mon /)).toBeVisible()
+  await expect(scheduledSync).toBeHidden()
+  await page.getByText('Sync settings & history').click()
   await expect(scheduledSync).toBeChecked()
   await expect(weekday).toHaveText('monday')
-  await expect(page.getByText(/· Next Mon /)).toBeVisible()
   await scheduledSync.click()
   await expect(scheduledSync).not.toBeChecked()
   await page.waitForLoadState('networkidle')
@@ -128,4 +130,31 @@ test('the Sync section shows the latest successful Sync', async ({ page }) => {
       .filter({ hasText: '9 - 15 Nov 2026' })
       .filter({ hasText: 'Synced' }),
   ).toBeVisible()
+})
+
+test('the Week shows the dates of the Synced Week and can Sync again when it differs', async ({
+  page,
+}) => {
+  const nextMonday = new Date()
+  nextMonday.setDate(nextMonday.getDate() + ((8 - nextMonday.getDay()) % 7 || 7))
+  await saveUnreadableApiKey()
+  await sql(
+    `INSERT INTO sync_records (user_id, ran_at, monday, trigger, outcome, fingerprint)
+     SELECT id, now(), '${nextMonday.toLocaleDateString('en-CA')}', 'scheduled', 'succeeded', 'stale'
+     FROM "user" WHERE email = 'runner@example.com'`,
+  )
+  await openPlannedWeek(page)
+
+  await expect(page.getByText(/^Week of .+ · Synced less than a minute ago/)).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: new RegExp(`mon ${nextMonday.getDate()}\\b`, 'i') }),
+  ).toBeVisible()
+  await expect(page.getByText('Differs from your calendar')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Sync again' }).click()
+  await expect(page.getByRole('alert').getByText(/^Last attempt failed/)).toBeVisible()
+  // Row 0 is the header.
+  const latest = page.getByRole('table', { name: 'Sync History' }).getByRole('row').nth(1)
+  await expect(latest).toContainText('Manual')
+  await expect(latest).toContainText('Failed')
 })

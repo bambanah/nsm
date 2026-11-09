@@ -1,0 +1,1 @@
+ALTER TABLE "sync_records" ADD COLUMN "fingerprint" text;

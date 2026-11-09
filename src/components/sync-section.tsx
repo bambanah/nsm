@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { format, formatDistanceToNow } from 'date-fns'
 import { CircleAlertIcon, CircleCheckIcon, HistoryIcon } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from 'cn'
 import { SyncDialog } from '@/components/sync-dialog'
 import { Button } from '@/components/ui/button'
@@ -17,7 +18,12 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { weekLabel } from '@/lib/week-dates'
 import { WEEKDAYS, type Week, type Weekday } from '@/planner/planner'
-import { getSyncState, saveIntervalsApiKey, saveScheduledSync } from '@/sync/sync.functions'
+import {
+  getSyncState,
+  saveIntervalsApiKey,
+  saveScheduledSync,
+  syncWeek,
+} from '@/sync/sync.functions'
 import { nextSyncTime } from '@/sync/sync-time'
 
 export type SyncState = Awaited<ReturnType<typeof getSyncState>>
@@ -59,10 +65,21 @@ export function SyncSection({
   isGuest: boolean
 }) {
   const [now] = useState(() => new Date())
-  const latest = syncHistory[0]
+  // Decided once, so finishing setup doesn't hide the controls being used.
+  const [collapsed] = useState(() => hasApiKey && !!scheduledSync?.enabled)
   const next =
     scheduledSync?.enabled &&
     nextSyncTime(scheduledSync.weekday, scheduledSync.hour, scheduledSync.timeZone, now)
+
+  const settings = (
+    <div className="grid border-t md:grid-cols-[minmax(0,20rem)_1fr] md:divide-x">
+      <div>
+        <ScheduledSyncSection scheduledSync={scheduledSync} hasApiKey={hasApiKey} />
+        <ApiKeySection hasApiKey={hasApiKey} />
+      </div>
+      <SyncHistory records={syncHistory} />
+    </div>
+  )
 
   return (
     <section className="flex flex-col rounded-lg border bg-card">
@@ -88,25 +105,91 @@ export function SyncSection({
               {next && ` · Next ${format(next, 'EEE d MMM HH:mm')}`}
             </p>
           )}
-          {latest?.outcome === 'failed' && (
-            <p className="text-destructive">
-              Last attempt failed {formatDistanceToNow(latest.ranAt, { addSuffix: true })}:{' '}
-              {latest.error}
-            </p>
-          )}
         </div>
         <SyncDialog week={week} disabled={disabled || !hasApiKey} isGuest={isGuest} />
       </header>
-      {!isGuest && (
-        <div className="grid border-t md:grid-cols-[minmax(0,20rem)_1fr] md:divide-x">
-          <div>
-            <ScheduledSyncSection scheduledSync={scheduledSync} hasApiKey={hasApiKey} />
-            <ApiKeySection hasApiKey={hasApiKey} />
-          </div>
-          <SyncHistory records={syncHistory} />
+      {!isGuest &&
+        (collapsed ? (
+          <details className="border-t">
+            <summary className="cursor-pointer px-4 py-2 font-semibold text-muted-foreground">
+              Sync settings & history
+            </summary>
+            {settings}
+          </details>
+        ) : (
+          settings
+        ))}
+    </section>
+  )
+}
+
+export function SyncStatus({
+  synced,
+  latest,
+  disabled,
+}: {
+  synced?: SyncState['recentSyncs'][number]
+  latest?: SyncRecord
+  disabled: boolean
+}) {
+  if (!synced && latest?.outcome !== 'failed') return null
+  return (
+    <div className="flex flex-col gap-2">
+      {latest?.outcome === 'failed' && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-2 text-destructive"
+        >
+          <CircleAlertIcon className="size-4 shrink-0" />
+          <p className="flex-1">
+            Last attempt failed {formatDistanceToNow(latest.ranAt, { addSuffix: true })}:{' '}
+            {latest.error}
+          </p>
+          <SyncAgain monday={latest.monday} disabled={disabled} />
         </div>
       )}
-    </section>
+      {synced && (
+        <p className="flex flex-wrap items-center gap-x-2 text-muted-foreground">
+          <span>
+            Week of <span className="font-bold text-foreground">{weekLabel(synced.monday)}</span> ·
+            Synced{' '}
+            <span title={format(synced.ranAt, 'EEE d MMM HH:mm')}>
+              {formatDistanceToNow(synced.ranAt, { addSuffix: true })}
+            </span>
+          </span>
+          {synced.differs && (
+            <span className="flex items-center gap-x-2">
+              · <span className="font-semibold text-foreground">Differs from your calendar</span> ·
+              <SyncAgain monday={synced.monday} disabled={disabled} />
+            </span>
+          )}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function SyncAgain({ monday, disabled }: { monday: string; disabled: boolean }) {
+  const router = useRouter()
+  const [syncing, setSyncing] = useState(false)
+
+  const sync = async () => {
+    setSyncing(true)
+    try {
+      await syncWeek({ data: { monday } })
+      toast.success(`Synced to ${weekLabel(monday)}`)
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setSyncing(false)
+    }
+    await router.invalidate()
+  }
+
+  return (
+    <Button variant="link" className="h-auto p-0" disabled={disabled || syncing} onClick={sync}>
+      Sync again
+    </Button>
   )
 }
 
