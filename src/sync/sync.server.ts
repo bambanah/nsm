@@ -2,14 +2,15 @@ import { subDays } from 'date-fns'
 import { and, desc, eq, gte } from 'drizzle-orm'
 import { db } from '@/db/db.server'
 import { scheduledSyncs, syncRecords } from '@/db/schema'
-import { isoDate } from '@/lib/week-dates'
+import { addDaysTo, isoDate, mondayOf } from '@/lib/week-dates'
 import { findPlanSettings } from '@/plan-settings/plan-settings.server'
 import { deriveWeek, type Weekday } from '@/planner/planner'
 import { findSessionChoices } from '@/session-choices/session-choices.server'
 import { findApiKey } from './intervals-connection.server'
 import { replaceManagedWorkouts } from './intervals.server'
 import { scheduledSyncAction } from './scheduled-sync'
-import { workouts } from './workouts'
+import { fingerprint } from './fingerprint'
+import { workouts, type Workout } from './workouts'
 
 type Trigger = (typeof syncRecords.$inferSelect)['trigger']
 type Outcome = (typeof syncRecords.$inferSelect)['outcome']
@@ -26,10 +27,14 @@ const record = (
   monday: string,
   trigger: Trigger,
   outcome: Outcome,
-  error?: string,
-) => db.insert(syncRecords).values({ userId, ranAt: new Date(), monday, trigger, outcome, error })
+  { error, fingerprint }: { error?: string; fingerprint?: string } = {},
+) =>
+  db
+    .insert(syncRecords)
+    .values({ userId, ranAt: new Date(), monday, trigger, outcome, error, fingerprint })
 
 export async function runSync(userId: string, monday: string, trigger: Trigger) {
+  let pushed: Workout[]
   try {
     const key = await findApiKey(userId)
     if (!key) throw new Error('Save your intervals.icu API key')
@@ -38,12 +43,13 @@ export async function runSync(userId: string, monday: string, trigger: Trigger) 
     if (!settings) throw new Error('Save Plan Settings first')
 
     const week = deriveWeek(settings, await findSessionChoices(userId))
-    await replaceManagedWorkouts(key, monday, workouts(week, settings, monday))
+    pushed = workouts(week, settings, monday)
+    await replaceManagedWorkouts(key, monday, pushed)
   } catch (e) {
-    await record(userId, monday, trigger, 'failed', (e as Error).message)
+    await record(userId, monday, trigger, 'failed', { error: (e as Error).message })
     throw e
   }
-  await record(userId, monday, trigger, 'succeeded')
+  await record(userId, monday, trigger, 'succeeded', { fingerprint: fingerprint(pushed) })
 }
 
 export async function runDueScheduledSyncs(now: Date) {
@@ -88,6 +94,34 @@ export async function upsertScheduledSync(userId: string, scheduledSync: Schedul
     .insert(scheduledSyncs)
     .values({ userId, ...values })
     .onConflictDoUpdate({ target: scheduledSyncs.userId, set: values })
+}
+
+// `differs`: the saved Planning State would now push something else to that week.
+export async function findRecentSucceededSyncs(userId: string, now: Date) {
+  const [rows, settings, sessionChoices] = await Promise.all([
+    db
+      .select({
+        ranAt: syncRecords.ranAt,
+        monday: syncRecords.monday,
+        fingerprint: syncRecords.fingerprint,
+      })
+      .from(syncRecords)
+      .where(
+        and(
+          eq(syncRecords.userId, userId),
+          eq(syncRecords.outcome, 'succeeded'),
+          // A week of slack for runners whose timezone is behind the server's.
+          gte(syncRecords.monday, addDaysTo(mondayOf(now), -7)),
+        ),
+      ),
+    findPlanSettings(userId),
+    findSessionChoices(userId),
+  ])
+  const week = settings && deriveWeek(settings, sessionChoices)
+  return rows.map(({ fingerprint: synced, ...row }) => ({
+    ...row,
+    differs: !!synced && !!week && synced !== fingerprint(workouts(week, settings, row.monday)),
+  }))
 }
 
 export async function findLastSucceededSync(

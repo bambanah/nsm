@@ -110,6 +110,10 @@ _Avoid_: Auto sync, cron, background sync
 The weekday and whole hour, in the runner's timezone, at which their Scheduled Sync runs.
 _Avoid_: Schedule, sync slot
 
+**Synced Week**:
+The calendar week of the runner's latest successful Sync that has not yet ended, against which the Week is shown with real dates. There is none when no Synced calendar week is current or upcoming, and the Week is then shown undated.
+_Avoid_: Current week, next week, upcoming week
+
 **Sync Record**:
 The record of one attempted Sync: when it ran, the calendar week, whether it was Manual or Scheduled, and its outcome. Together they form the runner's Sync History.
 _Avoid_: Log, sync event, sync run

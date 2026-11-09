@@ -7,6 +7,7 @@ import { hasApiKey, saveApiKey } from './intervals-connection.server'
 import { checkApiKey } from './intervals.server'
 import {
   findLastSucceededSync,
+  findRecentSucceededSyncs,
   findScheduledSync,
   findSyncHistory,
   runSync,
@@ -35,13 +36,14 @@ const scheduledSyncSchema = z.object({
 
 export const getSyncState = createServerFn({ method: 'GET' }).handler(async () => {
   const userId = await requireUserId()
-  const [apiKeySaved, scheduledSync, syncHistory, lastSync] = await Promise.all([
+  const [apiKeySaved, scheduledSync, syncHistory, lastSync, recentSyncs] = await Promise.all([
     hasApiKey(userId),
     findScheduledSync(userId),
     findSyncHistory(userId),
     findLastSucceededSync(userId),
+    findRecentSucceededSyncs(userId, new Date()),
   ])
-  return { hasApiKey: apiKeySaved, scheduledSync, syncHistory, lastSync }
+  return { hasApiKey: apiKeySaved, scheduledSync, syncHistory, lastSync, recentSyncs }
 })
 
 export const syncWeek = createServerFn({ method: 'POST' })

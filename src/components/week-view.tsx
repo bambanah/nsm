@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { ShuffleIcon } from 'lucide-react'
 import { cn } from 'cn'
+import { format } from 'date-fns'
 import { Explained } from '@/components/explained'
-import { SyncSection, type SyncState } from '@/components/sync-section'
+import { SyncSection, SyncStatus, type SyncState } from '@/components/sync-section'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -20,6 +21,7 @@ import {
   SESSION_CAP_UNTIL_MINUTES,
   SESSION_WORK_CAP_MINUTES,
   SHORT_EASY_RUN_MINUTES,
+  WEEKDAYS,
   type Day,
   type PlanSettings,
   type SessionChoice,
@@ -40,6 +42,8 @@ import {
   type Paces,
   type RepPaces,
 } from '@/planner/rep-paces'
+import { addDaysTo, parseDate } from '@/lib/week-dates'
+import { syncedWeek } from '@/sync/synced-week'
 
 export function WeekView({
   settings,
@@ -63,8 +67,17 @@ export function WeekView({
   const week = deriveWeek(settings, sessionChoices)
   const [selected, setSelected] = useState(() => (new Date().getDay() + 6) % 7)
   const day = week.days[selected]!
+  const [now] = useState(() => new Date())
+  const synced = syncedWeek(syncState.recentSyncs, now)
+  const date = (d: Day) =>
+    synced && parseDate(addDaysTo(synced.monday, WEEKDAYS.indexOf(d.weekday)))
   return (
     <div className="flex flex-col gap-4">
+      <SyncStatus
+        synced={synced}
+        latest={syncState.syncHistory[0]}
+        disabled={syncDisabled || !syncState.hasApiKey}
+      />
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
         <Stat label="Total" value={clock(week.totalMinutes)} detail={`${week.totalMinutes} min`} />
         <Stat
@@ -128,10 +141,11 @@ export function WeekView({
             <ShuffleIcon />
           </Button>
         </header>
-        <LoadChart days={week.days} selected={selected} onSelect={setSelected} />
+        <LoadChart days={week.days} date={date} selected={selected} onSelect={setSelected} />
       </section>
       <DayBreakdown
         day={day}
+        date={date(day)}
         paces={paces}
         sessionPicker={
           day.type === 'subT' && (
@@ -229,10 +243,12 @@ const TICK_MINUTES = 30
 
 function LoadChart({
   days,
+  date,
   selected,
   onSelect,
 }: {
   days: Day[]
+  date: (day: Day) => Date | undefined
   selected: number
   onSelect: (index: number) => void
 }) {
@@ -260,6 +276,7 @@ function LoadChart({
         <ol className="relative grid grid-cols-7 gap-1 sm:gap-3">
           {days.map((day, i) => {
             const minutes = dayMinutes(day)
+            const dayDate = date(day)
             return (
               <li key={day.weekday}>
                 <button
@@ -295,7 +312,10 @@ function LoadChart({
                       selected === i && 'shadow-[inset_0_-2px_0_var(--primary)]',
                     )}
                   >
-                    <span className="font-bold capitalize">{day.weekday.slice(0, 3)}</span>
+                    <span className="font-bold capitalize">
+                      {day.weekday.slice(0, 3)}
+                      {dayDate && ` ${format(dayDate, 'd')}`}
+                    </span>
                     <span className="truncate text-muted-foreground">
                       {DAY_TYPE_LABELS[day.type]}
                     </span>
@@ -356,10 +376,12 @@ const CELL = 'px-2 py-1.5 whitespace-nowrap sm:px-4'
 
 function DayBreakdown({
   day,
+  date,
   paces,
   sessionPicker,
 }: {
   day: Day
+  date?: Date
   paces?: Paces
   sessionPicker: React.ReactNode
 }) {
@@ -367,7 +389,8 @@ function DayBreakdown({
     <section className="overflow-hidden rounded-lg border bg-card">
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b px-4 py-2">
         <h2 className="font-bold">
-          <span className="capitalize">{day.weekday}</span> ·{' '}
+          <span className="capitalize">{day.weekday}</span>
+          {date && ` ${format(date, 'd MMM')}`} ·{' '}
           {day.type === 'rest' && day.merged ? (
             <Explained
               section="easy-runs"

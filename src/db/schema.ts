@@ -76,6 +76,7 @@ export const syncRecords = pgTable(
     trigger: text('trigger').$type<'manual' | 'scheduled'>().notNull(),
     outcome: text('outcome').$type<'succeeded' | 'failed' | 'skipped'>().notNull(),
     error: text('error'),
+    fingerprint: text('fingerprint'),
   },
   (t) => [index('sync_records_user_id_ran_at_idx').on(t.userId, t.ranAt)],
 )
