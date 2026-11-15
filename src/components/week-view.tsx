@@ -43,7 +43,7 @@ import {
   type RepPaces,
 } from '@/planner/rep-paces'
 import { addDaysTo, parseDate } from '@/lib/week-dates'
-import { syncedWeek } from '@/sync/synced-week'
+import { openingDayIndex, syncedWeek } from '@/sync/synced-week'
 
 export function WeekView({
   settings,
@@ -65,10 +65,10 @@ export function WeekView({
   onChooseSession: (weekday: Weekday, repFormat?: RepFormat) => void
 }) {
   const week = deriveWeek(settings, sessionChoices)
-  const [selected, setSelected] = useState(() => (new Date().getDay() + 6) % 7)
-  const day = week.days[selected]!
   const [now] = useState(() => new Date())
   const synced = syncedWeek(syncState.recentSyncs, now)
+  const [selected, setSelected] = useState(() => openingDayIndex(synced, now))
+  const day = week.days[selected]!
   const date = (d: Day) =>
     synced && parseDate(addDaysTo(synced.monday, WEEKDAYS.indexOf(d.weekday)))
   return (
