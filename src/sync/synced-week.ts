@@ -17,3 +17,6 @@ export function syncedWeek<R extends SyncedWeekRecord>(succeeded: R[], now: Date
       undefined,
     )
 }
+
+export const openingDayIndex = (synced: SyncedWeekRecord | undefined, now: Date) =>
+  synced && synced.monday > mondayOf(now) ? 0 : (now.getDay() + 6) % 7
