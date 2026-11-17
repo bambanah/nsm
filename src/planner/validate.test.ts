@@ -8,6 +8,8 @@ const settings = (overrides: Partial<PlanSettings> = {}): PlanSettings => ({
   coolDownMinutes: 10,
   dayPreferences: {},
   shuffle: 1,
+  easyHeartRateMinPercent: 60,
+  easyHeartRateMaxPercent: 70,
   fiveKSeconds: null,
   ...overrides,
 })
@@ -35,6 +37,38 @@ describe('validatePlanSettings', () => {
       { field: 'coolDown', message: 'Cool-down must be between 5 and 20 minutes' },
     ])
   })
+  it.each([
+    [50, 90],
+    [65, 78],
+  ])('accepts an Easy Heart Rate of %s-%s%%', (min, max) => {
+    expect(
+      validatePlanSettings(
+        settings({ easyHeartRateMinPercent: min, easyHeartRateMaxPercent: max }),
+      ),
+    ).toEqual([])
+  })
+
+  it.each([
+    [70, 70],
+    [75, 70],
+    [49, 70],
+    [60, 91],
+    [60.5, 70],
+    [Number.NaN, 70],
+  ])('rejects an Easy Heart Rate of %s-%s%%', (min, max) => {
+    expect(
+      validatePlanSettings(
+        settings({ easyHeartRateMinPercent: min, easyHeartRateMaxPercent: max }),
+      ),
+    ).toEqual([
+      {
+        field: 'easyHeartRate',
+        message:
+          'Easy Heart Rate must go from a lower to a higher percentage, both between 50% and 90%',
+      },
+    ])
+  })
+
   it.each([null, 1, 1185])('accepts a 5K Time of %s seconds', (fiveKSeconds) => {
     expect(validatePlanSettings(settings({ fiveKSeconds }))).toEqual([])
   })

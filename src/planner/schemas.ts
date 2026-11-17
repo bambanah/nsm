@@ -1,5 +1,10 @@
 import { z } from 'zod'
-import { DAY_PREFERENCES, WEEKDAYS } from './planner'
+import {
+  DAY_PREFERENCES,
+  DEFAULT_EASY_HEART_RATE_MAX_PERCENT,
+  DEFAULT_EASY_HEART_RATE_MIN_PERCENT,
+  WEEKDAYS,
+} from './planner'
 import { REP_LENGTHS } from './rep-formats'
 
 export const planSettingsSchema = z.object({
@@ -11,6 +16,9 @@ export const planSettingsSchema = z.object({
     .int()
     .min(0)
     .max(2 ** 31 - 1),
+  // Defaults keep Guest plans saved before Easy Heart Rate existed.
+  easyHeartRateMinPercent: z.number().default(DEFAULT_EASY_HEART_RATE_MIN_PERCENT),
+  easyHeartRateMaxPercent: z.number().default(DEFAULT_EASY_HEART_RATE_MAX_PERCENT),
   fiveKSeconds: z.number().nullable(),
 })
 

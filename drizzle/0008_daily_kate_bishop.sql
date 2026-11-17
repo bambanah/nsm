@@ -1,0 +1,2 @@
+ALTER TABLE "plan_settings" ADD COLUMN "easy_heart_rate_min_percent" integer DEFAULT 60 NOT NULL;--> statement-breakpoint
+ALTER TABLE "plan_settings" ADD COLUMN "easy_heart_rate_max_percent" integer DEFAULT 70 NOT NULL;

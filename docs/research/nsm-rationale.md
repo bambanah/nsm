@@ -110,6 +110,7 @@ A rule is **sourced** when the guide or sirpoc states it. A **planner choice** i
 - The 70% cap is sourced: "Copeland uses an average of no more than about 70% of measured maximum HR as a conservative cap, often running below it. This is a ceiling, not a goal" (https://norwegiansingles.run/section1_core_principles.html).
 - It applies to Easy Runs, Long Runs, warm-ups and cool-downs alike. Easy and long runs share an intensity: "All are the same pace roughly" (post-130), and How this works already counts warm-ups and cool-downs as easy time.
 - The 60% floor is a planner choice. The sources give only a ceiling; a range lets intervals.icu show the target without making 70% the goal.
+- 60-70% is only the default. A runner can set their own Easy Heart Rate, which Syncs use instead. This is a runner control, not a planner rule: the sources never raise the easy cap for heat, humidity, hills or altitude, and instead say to slow down (see Easy running below).
 
 ### Day Preference limits: at most 2 Rest, 2 Easy, 1 Long and 3 SubT days
 
@@ -130,6 +131,7 @@ A rule is **sourced** when the guide or sirpoc states it. A **planner choice** i
 ## Easy running (norwegiansingles.run)
 
 - Easy intensity: "Copeland uses an average of no more than about 70% of measured maximum HR as a conservative cap, often running below it. This is a ceiling, not a goal. He now prefers HR to his earlier 65%-of-maximal-aerobic-speed guideline, which can still lead runners to push too hard" (section1). Look for "fairly steady HR after warming up. Slow down or walk hills as needed".
+- Conditions: "In mild conditions, look for fairly steady HR after warming up. Slow down or walk hills as needed. Heat can cause drift even at easy effort, so also check breathing and how you feel" (section1). "HR can drift in the heat even at a steady effort. Use breathing and perceived effort alongside it" (https://norwegiansingles.run/section4_individualization_considerations.html). No source raises the easy cap for heat, humidity, hills or altitude, and altitude is not mentioned. sirpoc's answer to hills is power rather than a looser HR cap: running to power gave "68% of max HR. Incidentally, the HR was a lot flatter", with "78% [of FTP]" as the cap (https://sites.google.com/view/sub-threshold/sirpoc84-posts, 16 Aug 2023).
 - Easy and long runs share a pace: "All are the same pace roughly. 65% of MAS" (post-130).
 - The planner's Easy Pace is 65% of MAS, with MAS estimated as Daniels' vVO2max: the speed at which Daniels' VO2 cost of running equals the VDOT of the runner's 5K Time. threshold.works uses the same rule (0.651) and serves as a cross-check.
 - Before a half, "occasional modest extensions can help with time on your feet, but matching a slower runner's entire race duration is unnecessary" (section4).

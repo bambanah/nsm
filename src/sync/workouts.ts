@@ -10,8 +10,6 @@ import { repFormatLabel } from '@/planner/rep-formats'
 import { formatRepPace, repPaces, type RepPaces } from '@/planner/rep-paces'
 
 export const EXTERNAL_ID_PREFIX = 'nsm-'
-export const EASY_HR_PERCENT = '60-70%'
-const EASY_HR = `${EASY_HR_PERCENT} HR`
 
 export interface Workout {
   category: 'WORKOUT'
@@ -24,6 +22,7 @@ export interface Workout {
 
 export function workouts(week: Week, settings: PlanSettings, monday: string): Workout[] {
   const paces = settings.fiveKSeconds ? repPaces(settings.fiveKSeconds) : undefined
+  const easyHr = `${settings.easyHeartRateMinPercent}-${settings.easyHeartRateMaxPercent}% HR`
   return week.days.flatMap((day) => {
     if (day.type === 'rest') return []
     const date = addDaysTo(monday, WEEKDAYS.indexOf(day.weekday))
@@ -34,15 +33,15 @@ export function workouts(week: Week, settings: PlanSettings, monday: string): Wo
         start_date_local: `${date}T00:00:00`,
         name:
           day.type === 'subT' ? repFormatLabel(day.session.repFormat) : DAY_TYPE_LABELS[day.type],
-        description: workoutText(day, paces),
+        description: workoutText(day, easyHr, paces),
         external_id: `${EXTERNAL_ID_PREFIX}${date}`,
       },
     ]
   })
 }
 
-function workoutText(day: Exclude<Day, { type: 'rest' }>, paces?: RepPaces) {
-  if (day.type !== 'subT') return `- ${day.minutes}m ${EASY_HR}`
+function workoutText(day: Exclude<Day, { type: 'rest' }>, easyHr: string, paces?: RepPaces) {
+  if (day.type !== 'subT') return `- ${day.minutes}m ${easyHr}`
 
   const { session } = day
   const { reps, repMinutes, repLength } = session.repFormat
@@ -51,7 +50,7 @@ function workoutText(day: Exclude<Day, { type: 'rest' }>, paces?: RepPaces) {
 
   return [
     'Warmup',
-    `- ${session.warmUpMinutes}m ${EASY_HR} press lap`,
+    `- ${session.warmUpMinutes}m ${easyHr} press lap`,
     '',
     `${reps - 1}x`,
     rep,
@@ -60,6 +59,6 @@ function workoutText(day: Exclude<Day, { type: 'rest' }>, paces?: RepPaces) {
     rep,
     '',
     'Cooldown',
-    `- ${session.coolDownMinutes}m ${EASY_HR}`,
+    `- ${session.coolDownMinutes}m ${easyHr}`,
   ].join('\n')
 }

@@ -14,6 +14,8 @@ export async function findPlanSettings(
       coolDownMinutes: planSettings.coolDownMinutes,
       dayPreferences: planSettings.dayPreferences,
       shuffle: planSettings.shuffle,
+      easyHeartRateMinPercent: planSettings.easyHeartRateMinPercent,
+      easyHeartRateMaxPercent: planSettings.easyHeartRateMaxPercent,
       fiveKSeconds: planSettings.fiveKSeconds,
     })
     .from(planSettings)

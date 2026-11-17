@@ -10,7 +10,12 @@ import {
   text,
   timestamp,
 } from 'drizzle-orm/pg-core'
-import type { PlanSettings, Weekday } from '@/planner/planner'
+import {
+  DEFAULT_EASY_HEART_RATE_MAX_PERCENT,
+  DEFAULT_EASY_HEART_RATE_MIN_PERCENT,
+  type PlanSettings,
+  type Weekday,
+} from '@/planner/planner'
 import type { RepLength } from '@/planner/rep-formats'
 import { user } from './auth-schema'
 
@@ -25,6 +30,12 @@ export const planSettings = pgTable('plan_settings', {
   coolDownMinutes: integer('cool_down_minutes').notNull(),
   dayPreferences: jsonb('day_preferences').$type<PlanSettings['dayPreferences']>().notNull(),
   shuffle: integer('shuffle').notNull(),
+  easyHeartRateMinPercent: integer('easy_heart_rate_min_percent')
+    .default(DEFAULT_EASY_HEART_RATE_MIN_PERCENT)
+    .notNull(),
+  easyHeartRateMaxPercent: integer('easy_heart_rate_max_percent')
+    .default(DEFAULT_EASY_HEART_RATE_MAX_PERCENT)
+    .notNull(),
   fiveKSeconds: integer('five_k_seconds'),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

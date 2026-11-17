@@ -5,6 +5,8 @@ import type { HowItWorksSection } from '@/components/explained'
 import { AppHeader } from '@/components/app-header'
 import { Button } from '@/components/ui/button'
 import {
+  DEFAULT_EASY_HEART_RATE_MAX_PERCENT,
+  DEFAULT_EASY_HEART_RATE_MIN_PERCENT,
   LONG_RUN_RATIO,
   MAX_LONG_RUN_MINUTES,
   MAX_WEEKLY_DURATION_MINUTES,
@@ -32,7 +34,6 @@ import {
   MAX_WARM_UP_COOL_DOWN_MINUTES,
   MIN_WARM_UP_COOL_DOWN_MINUTES,
 } from '@/planner/validate'
-import { EASY_HR_PERCENT } from '@/sync/workouts'
 
 export const Route = createFileRoute('/how-it-works')({
   head: () => ({ meta: [{ title: 'NSM | How this works' }] }),
@@ -254,10 +255,17 @@ function HowItWorks() {
             heart rate and effort as you go.
           </p>
           <p>
-            Easy Runs, Long Runs, warm-ups and cool-downs Sync with a target of {EASY_HR_PERCENT} of
-            maximum heart rate, taken from your intervals.icu settings. The guide caps easy running
-            at about 70% of measured maximum heart rate, a ceiling rather than a goal; the 60% floor
-            gives intervals.icu a range to show (<em>planner choice</em>).
+            Easy Runs, Long Runs, warm-ups and cool-downs Sync with a target of{' '}
+            {DEFAULT_EASY_HEART_RATE_MIN_PERCENT}-{DEFAULT_EASY_HEART_RATE_MAX_PERCENT}% of maximum
+            heart rate, taken from your intervals.icu settings. The guide caps easy running at about{' '}
+            {DEFAULT_EASY_HEART_RATE_MAX_PERCENT}% of measured maximum heart rate, a ceiling rather
+            than a goal; the {DEFAULT_EASY_HEART_RATE_MIN_PERCENT}% floor gives intervals.icu a
+            range to show (<em>planner choice</em>).
+          </p>
+          <p>
+            You can set your own Easy Heart Rate in the planner, and Syncs use it instead. This is
+            your choice, not part of the method: the guide never raises the cap for conditions, and
+            instead suggests slowing down and checking your breathing and how you feel.
           </p>
           <p>
             With a 5K Time, the planner also shows an Easy Pace for Easy Runs, Long Runs, warm-ups

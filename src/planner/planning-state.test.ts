@@ -9,6 +9,8 @@ const settings: PlanSettings = {
   coolDownMinutes: 10,
   dayPreferences: {},
   shuffle: 1,
+  easyHeartRateMinPercent: 60,
+  easyHeartRateMaxPercent: 70,
   fiveKSeconds: null,
 }
 const threeByTen30K: RepFormat = { repLength: '30K', reps: 3, repMinutes: 10 }
