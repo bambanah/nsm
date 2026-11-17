@@ -9,7 +9,7 @@ import {
 } from './planner'
 
 export interface PlanSettingsError {
-  field: 'weeklyDuration' | 'warmUp' | 'coolDown' | 'fiveKTime' | 'dayPreferences'
+  field: 'weeklyDuration' | 'warmUp' | 'coolDown' | 'easyHeartRate' | 'fiveKTime' | 'dayPreferences'
   message: string
 }
 
@@ -22,6 +22,8 @@ export const DAY_PREFERENCE_LIMITS = {
 
 export const MIN_WARM_UP_COOL_DOWN_MINUTES = 5
 export const MAX_WARM_UP_COOL_DOWN_MINUTES = 20
+export const MIN_EASY_HEART_RATE_PERCENT = 50
+export const MAX_EASY_HEART_RATE_PERCENT = 90
 
 const hoursAndMinutes = (minutes: number) => `${Math.floor(minutes / 60)}h ${minutes % 60}m`
 
@@ -62,6 +64,16 @@ export function validatePlanSettings(settings: PlanSettings): PlanSettingsError[
     errors.push({
       field: 'coolDown',
       message: `Cool-down must be between ${MIN_WARM_UP_COOL_DOWN_MINUTES} and ${MAX_WARM_UP_COOL_DOWN_MINUTES} minutes`,
+    })
+  const { easyHeartRateMinPercent: min, easyHeartRateMaxPercent: max } = settings
+  if (
+    !isIntegerBetween(min, MIN_EASY_HEART_RATE_PERCENT, MAX_EASY_HEART_RATE_PERCENT) ||
+    !isIntegerBetween(max, MIN_EASY_HEART_RATE_PERCENT, MAX_EASY_HEART_RATE_PERCENT) ||
+    min >= max
+  )
+    errors.push({
+      field: 'easyHeartRate',
+      message: `Easy Heart Rate must go from a lower to a higher percentage, both between ${MIN_EASY_HEART_RATE_PERCENT}% and ${MAX_EASY_HEART_RATE_PERCENT}%`,
     })
   const { fiveKSeconds } = settings
   if (fiveKSeconds !== null && !(Number.isInteger(fiveKSeconds) && fiveKSeconds > 0))

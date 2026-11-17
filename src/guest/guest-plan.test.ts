@@ -13,6 +13,8 @@ const state: PlanningState = {
     coolDownMinutes: 10,
     dayPreferences: { monday: 'rest' },
     shuffle: 1,
+    easyHeartRateMinPercent: 60,
+    easyHeartRateMaxPercent: 70,
     fiveKSeconds: 1185,
   },
   sessionChoices: [
@@ -36,6 +38,16 @@ describe('Guest Planning State store', () => {
 
   it('loads the Planning State it saved', () => {
     saveGuestPlanningState(state)
+    expect(loadGuestPlanningState()).toEqual(state)
+  })
+
+  it('loads a Planning State saved before Easy Heart Rate with the default range', () => {
+    const {
+      easyHeartRateMinPercent: _min,
+      easyHeartRateMaxPercent: _max,
+      ...settings
+    } = state.settings
+    localStorage.setItem('guestPlan', JSON.stringify({ ...state, settings }))
     expect(loadGuestPlanningState()).toEqual(state)
   })
 

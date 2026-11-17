@@ -57,6 +57,13 @@
       "when": 1794181935306,
       "tag": "0007_busy_thor",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794882844489,
+      "tag": "0008_daily_kate_bishop",
+      "breakpoints": true
     }
   ]
 }

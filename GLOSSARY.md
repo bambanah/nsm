@@ -13,7 +13,7 @@ _Avoid_: Anonymous user, visitor, local user
 ### Planning
 
 **Plan Settings**:
-The persisted inputs from which every Week is derived: Weekly Duration, warm-up and cool-down length, a Day Preference per weekday, a Shuffle, and an optional 5K Time. With Session Choices, they form the Planning State.
+The persisted inputs from which every Week is derived and its runs are described: Weekly Duration, warm-up and cool-down length, a Day Preference per weekday, a Shuffle, an Easy Heart Rate, and an optional 5K Time. With Session Choices, they form the Planning State.
 _Avoid_: Template, config, profile
 
 **Planning State**:
@@ -79,7 +79,11 @@ The single longest easy run of the Week, about 1.7 times an Easy Run within fixe
 _Avoid_: Long session
 
 **Easy Run**:
-A run at easy effort, no more than about 70% of maximum heart rate, filling the Week's remaining time.
+A run at easy effort, within the runner's Easy Heart Rate, filling the Week's remaining time.
+
+**Easy Heart Rate**:
+The range of percentages of maximum heart rate that easy running is Synced with: 60-70% unless the runner sets their own. It is the runner's control, not a rule of the method, whose sources cap easy running at about 70% and never raise that cap for heat or hills.
+_Avoid_: Easy zone, HR zone, Z2, easy HR cap
 
 **Easy Pace**:
 The fastest pace per km an Easy Run should go, derived from the runner's 5K Time as 65% of their maximal aerobic speed. It is a ceiling, not a goal, and applies equally to Long Runs, warm-ups and cool-downs.

@@ -23,6 +23,8 @@ export interface PlanSettings {
   coolDownMinutes: number
   dayPreferences: Partial<Record<Weekday, Exclude<DayPreference, 'default'>>>
   shuffle: number
+  easyHeartRateMinPercent: number
+  easyHeartRateMaxPercent: number
   fiveKSeconds: number | null
 }
 
@@ -70,6 +72,8 @@ export const SESSION_CAP_UNTIL_MINUTES = 420
 export const LONG_RUN_RATIO = 1.7
 export const MIN_LONG_RUN_MINUTES = 75
 export const MAX_LONG_RUN_MINUTES = 105
+export const DEFAULT_EASY_HEART_RATE_MIN_PERCENT = 60
+export const DEFAULT_EASY_HEART_RATE_MAX_PERCENT = 70
 
 export const SUB_THRESHOLD_PERCENT = 23
 export const MIN_SUB_THRESHOLD_PERCENT = 20

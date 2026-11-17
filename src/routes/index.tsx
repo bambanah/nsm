@@ -23,6 +23,8 @@ import {
   getSessionChoices,
 } from '@/session-choices/session-choices.functions'
 import {
+  DEFAULT_EASY_HEART_RATE_MAX_PERCENT,
+  DEFAULT_EASY_HEART_RATE_MIN_PERCENT,
   randomShuffle,
   WEEKDAYS,
   type DayPreference,
@@ -73,6 +75,8 @@ interface FormState {
   coolDown: string
   dayPreferences: PlanSettings['dayPreferences']
   shuffle: number
+  easyHeartRateMin: string
+  easyHeartRateMax: string
   fiveKTime: string
 }
 
@@ -83,10 +87,12 @@ const toForm = (s: PlanSettings): FormState => ({
   coolDown: String(s.coolDownMinutes),
   dayPreferences: s.dayPreferences,
   shuffle: s.shuffle,
+  easyHeartRateMin: String(s.easyHeartRateMinPercent),
+  easyHeartRateMax: String(s.easyHeartRateMaxPercent),
   fiveKTime: s.fiveKSeconds === null ? '' : formatDuration(s.fiveKSeconds),
 })
 
-const parseMinutes = (value: string) => (value === '' ? Number.NaN : Number(value))
+const parseNumber = (value: string) => (value === '' ? Number.NaN : Number(value))
 
 function parseFiveKTime(value: string) {
   const trimmed = value.trim()
@@ -100,16 +106,20 @@ const samePlanSettings = (a: PlanSettings, b: PlanSettings) =>
   a.warmUpMinutes === b.warmUpMinutes &&
   a.coolDownMinutes === b.coolDownMinutes &&
   a.shuffle === b.shuffle &&
+  a.easyHeartRateMinPercent === b.easyHeartRateMinPercent &&
+  a.easyHeartRateMaxPercent === b.easyHeartRateMaxPercent &&
   a.fiveKSeconds === b.fiveKSeconds &&
   WEEKDAYS.every((d) => a.dayPreferences[d] === b.dayPreferences[d])
 
 const toSettings = (f: FormState): PlanSettings => ({
   weeklyDurationMinutes:
     f.hours === '' && f.minutes === '' ? Number.NaN : Number(f.hours) * 60 + Number(f.minutes),
-  warmUpMinutes: parseMinutes(f.warmUp),
-  coolDownMinutes: parseMinutes(f.coolDown),
+  warmUpMinutes: parseNumber(f.warmUp),
+  coolDownMinutes: parseNumber(f.coolDown),
   dayPreferences: f.dayPreferences,
   shuffle: f.shuffle,
+  easyHeartRateMinPercent: parseNumber(f.easyHeartRateMin),
+  easyHeartRateMaxPercent: parseNumber(f.easyHeartRateMax),
   fiveKSeconds: parseFiveKTime(f.fiveKTime),
 })
 
@@ -149,6 +159,8 @@ function Planner() {
           coolDown: '10',
           dayPreferences: {},
           shuffle: randomShuffle(),
+          easyHeartRateMin: String(DEFAULT_EASY_HEART_RATE_MIN_PERCENT),
+          easyHeartRateMax: String(DEFAULT_EASY_HEART_RATE_MAX_PERCENT),
           fiveKTime: '',
         },
   )
@@ -284,7 +296,32 @@ function Planner() {
                 <span className="font-semibold tabular-nums">{formatDuration(paces.easy)}/km</span>
               </Row>
             )}
-            <FieldErrors errors={errors} fields={['fiveKTime']} />
+            <Row
+              label={
+                <Explained
+                  section="pacing"
+                  explanation="The guide suggests keeping easy runs under about 70% of your maximum heart rate, and slowing down or walking in heat or on hills rather than going over it."
+                >
+                  Easy heart rate
+                </Explained>
+              }
+            >
+              <NumberInput
+                aria-label="Easy heart rate low"
+                value={form.easyHeartRateMin}
+                max={99}
+                onChange={(easyHeartRateMin) => update({ easyHeartRateMin })}
+              />
+              <span className="text-muted-foreground">-</span>
+              <NumberInput
+                aria-label="Easy heart rate high"
+                value={form.easyHeartRateMax}
+                max={99}
+                onChange={(easyHeartRateMax) => update({ easyHeartRateMax })}
+              />
+              <span className="w-3 text-muted-foreground">%</span>
+            </Row>
+            <FieldErrors errors={errors} fields={['fiveKTime', 'easyHeartRate']} />
           </Section>
           <Section
             title={

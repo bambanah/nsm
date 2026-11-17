@@ -8,6 +8,8 @@ const settings = (fiveKSeconds: number | null): PlanSettings => ({
   coolDownMinutes: 10,
   dayPreferences: {},
   shuffle: 1,
+  easyHeartRateMinPercent: 60,
+  easyHeartRateMaxPercent: 70,
   fiveKSeconds,
 })
 
@@ -81,6 +83,17 @@ describe('workouts', () => {
     )
     expect(easy.description).toBe('- 45m 60-70% HR')
     expect(long.description).toBe('- 90m 60-70% HR')
+  })
+
+  it("targets the runner's Easy Heart Rate on every easy step", () => {
+    const [easy, session] = workouts(
+      week([{ weekday: 'monday', type: 'easy', minutes: 45 }, subT]),
+      { ...settings(null), easyHeartRateMinPercent: 65, easyHeartRateMaxPercent: 78 },
+      '2026-10-26',
+    )
+    expect(easy.description).toBe('- 45m 65-78% HR')
+    expect(session.description).toContain('- 15m 65-78% HR press lap')
+    expect(session.description).toContain('- 10m 65-78% HR')
   })
 
   it('describes a Sub-threshold Session with reps at the Rep Pace and the last rep outside the repeat', () => {
